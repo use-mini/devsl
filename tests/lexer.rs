@@ -112,3 +112,261 @@ mod numbers {
         }
     }
 }
+
+mod operators {
+    use crate::lex;
+
+    #[test]
+    fn plus() {
+        insta::assert_debug_snapshot!(lex("+"));
+    }
+    #[test]
+    fn minus() {
+        insta::assert_debug_snapshot!(lex("-"));
+    }
+    #[test]
+    fn star() {
+        insta::assert_debug_snapshot!(lex("*"));
+    }
+    #[test]
+    fn slash() {
+        insta::assert_debug_snapshot!(lex("/"));
+    }
+    #[test]
+    fn eq() {
+        insta::assert_debug_snapshot!(lex("="));
+    }
+    #[test]
+    fn eq_eq() {
+        insta::assert_debug_snapshot!(lex("=="));
+    }
+    #[test]
+    fn bang_eq() {
+        insta::assert_debug_snapshot!(lex("!="));
+    }
+    #[test]
+    fn lt() {
+        insta::assert_debug_snapshot!(lex("<"));
+    }
+    #[test]
+    fn lt_eq() {
+        insta::assert_debug_snapshot!(lex("<="));
+    }
+    #[test]
+    fn gt() {
+        insta::assert_debug_snapshot!(lex(">"));
+    }
+    #[test]
+    fn gt_eq() {
+        insta::assert_debug_snapshot!(lex(">="));
+    }
+    #[test]
+    fn arrow() {
+        insta::assert_debug_snapshot!(lex("->"));
+    }
+    #[test]
+    fn arithmetic_expression() {
+        insta::assert_debug_snapshot!(lex("a + b * c"));
+    }
+    #[test]
+    fn comparison_expression() {
+        insta::assert_debug_snapshot!(lex("a == b and c != d"));
+    }
+}
+
+mod delimiters {
+    use crate::lex;
+
+    #[test]
+    fn parens() {
+        insta::assert_debug_snapshot!(lex("()"));
+    }
+    #[test]
+    fn brackets() {
+        insta::assert_debug_snapshot!(lex("[]"));
+    }
+    #[test]
+    fn curly() {
+        insta::assert_debug_snapshot!(lex("{}"));
+    }
+    #[test]
+    fn comma() {
+        insta::assert_debug_snapshot!(lex(","));
+    }
+    #[test]
+    fn colon() {
+        insta::assert_debug_snapshot!(lex(":"));
+    }
+    #[test]
+    fn dot() {
+        insta::assert_debug_snapshot!(lex("."));
+    }
+    #[test]
+    fn semicolon() {
+        insta::assert_debug_snapshot!(lex(";"));
+    }
+}
+
+mod keywords {
+    use crate::lex;
+
+    #[test]
+    fn and() {
+        insta::assert_debug_snapshot!(lex("and"));
+    }
+    #[test]
+    fn or() {
+        insta::assert_debug_snapshot!(lex("or"));
+    }
+    #[test]
+    fn not() {
+        insta::assert_debug_snapshot!(lex("not"));
+    }
+    #[test]
+    fn not_x() {
+        insta::assert_debug_snapshot!(lex("not x"));
+    }
+    #[test]
+    fn similar_idents() {
+        insta::assert_debug_snapshot!(lex("andy ore notice"));
+    }
+}
+
+mod identifiers {
+    use crate::lex;
+
+    #[test]
+    fn basic() {
+        insta::assert_debug_snapshot!(lex("foo"));
+    }
+    #[test]
+    fn underscore_start() {
+        insta::assert_debug_snapshot!(lex("_foo"));
+    }
+    #[test]
+    fn with_digits() {
+        insta::assert_debug_snapshot!(lex("foo123"));
+    }
+    #[test]
+    fn just_underscore() {
+        insta::assert_debug_snapshot!(lex("_"));
+    }
+}
+
+mod extended_identifiers {
+    use crate::lex;
+
+    #[test]
+    fn hyphenated() {
+        insta::assert_debug_snapshot!(lex("@kebab-name"));
+    }
+    #[test]
+    fn no_hyphen() {
+        insta::assert_debug_snapshot!(lex("@foo"));
+    }
+    #[test]
+    fn leading_digit() {
+        insta::assert_debug_snapshot!(lex("@123-foo"));
+    }
+    #[test]
+    fn member_access() {
+        insta::assert_debug_snapshot!(lex("obj.@kebab-name"));
+    }
+
+    mod errors {
+        use crate::lex;
+
+        #[test]
+        fn empty_at_eof() {
+            insta::assert_debug_snapshot!(lex("@"));
+        }
+        #[test]
+        fn empty_before_space() {
+            insta::assert_debug_snapshot!(lex("@ foo"));
+        }
+        #[test]
+        fn empty_before_punct() {
+            insta::assert_debug_snapshot!(lex("@+"));
+        }
+    }
+}
+
+mod comments {
+    use crate::lex;
+
+    #[test]
+    fn line_comment() {
+        insta::assert_debug_snapshot!(lex("# a comment"));
+    }
+    #[test]
+    fn comment_then_newline() {
+        insta::assert_debug_snapshot!(lex("# a comment\nfoo"));
+    }
+    #[test]
+    fn comment_after_code() {
+        insta::assert_debug_snapshot!(lex("foo # tail"));
+    }
+}
+
+mod strings {
+    use crate::lex;
+
+    #[test]
+    fn basic() {
+        insta::assert_debug_snapshot!(lex(r#""hello""#));
+    }
+    #[test]
+    fn empty() {
+        insta::assert_debug_snapshot!(lex(r#""""#));
+    }
+    #[test]
+    fn escape_newline() {
+        insta::assert_debug_snapshot!(lex(r#""hello\nworld""#));
+    }
+    #[test]
+    fn escape_tab() {
+        insta::assert_debug_snapshot!(lex(r#""hello\tworld""#));
+    }
+    #[test]
+    fn escape_backslash() {
+        insta::assert_debug_snapshot!(lex(r#""a\\b""#));
+    }
+    #[test]
+    fn escape_quote() {
+        insta::assert_debug_snapshot!(lex(r#""a\"b""#));
+    }
+
+    mod errors {
+        use crate::lex;
+
+        #[test]
+        fn raw_newline() {
+            insta::assert_debug_snapshot!(lex("\"hello\nworld\""));
+        }
+        #[test]
+        fn unterminated() {
+            insta::assert_debug_snapshot!(lex(r#""hello"#));
+        }
+        #[test]
+        fn bad_escape() {
+            insta::assert_debug_snapshot!(lex(r#""\x""#));
+        }
+        #[test]
+        fn unterminated_escape() {
+            insta::assert_debug_snapshot!(lex("\"hello\\"));
+        }
+    }
+}
+
+mod reserved {
+    use crate::lex;
+
+    #[test]
+    fn backtick() {
+        insta::assert_debug_snapshot!(lex("`"));
+    }
+    #[test]
+    fn dollar() {
+        insta::assert_debug_snapshot!(lex("$"));
+    }
+}

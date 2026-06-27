@@ -1,0 +1,24 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"@kebab-name\")"
+---
+Ok(
+    [
+        Token {
+            kind: ExtendedIdentifier(
+                "kebab-name",
+            ),
+            span: Span {
+                start: 0,
+                end: 11,
+            },
+        },
+        Token {
+            kind: Eof,
+            span: Span {
+                start: 11,
+                end: 11,
+            },
+        },
+    ],
+)

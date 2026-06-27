@@ -1,0 +1,24 @@
+---
+source: tests/lexer.rs
+expression: "lex(r#\"\"hello\"\"#)"
+---
+Ok(
+    [
+        Token {
+            kind: StringLiteral(
+                "hello",
+            ),
+            span: Span {
+                start: 0,
+                end: 7,
+            },
+        },
+        Token {
+            kind: Eof,
+            span: Span {
+                start: 7,
+                end: 7,
+            },
+        },
+    ],
+)

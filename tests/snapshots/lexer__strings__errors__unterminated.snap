@@ -1,0 +1,13 @@
+---
+source: tests/lexer.rs
+expression: "lex(r#\"\"hello\"#)"
+---
+Err(
+    LexError {
+        message: "unterminated string literal: `\"hello`",
+        span: Span {
+            start: 0,
+            end: 6,
+        },
+    },
+)

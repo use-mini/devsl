@@ -1,0 +1,24 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"@123-foo\")"
+---
+Ok(
+    [
+        Token {
+            kind: ExtendedIdentifier(
+                "123-foo",
+            ),
+            span: Span {
+                start: 0,
+                end: 8,
+            },
+        },
+        Token {
+            kind: Eof,
+            span: Span {
+                start: 8,
+                end: 8,
+            },
+        },
+    ],
+)

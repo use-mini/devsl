@@ -1,0 +1,13 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"@\")"
+---
+Err(
+    LexError {
+        message: "expected identifier after `@`",
+        span: Span {
+            start: 0,
+            end: 1,
+        },
+    },
+)

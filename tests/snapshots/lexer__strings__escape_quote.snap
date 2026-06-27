@@ -1,0 +1,24 @@
+---
+source: tests/lexer.rs
+expression: "lex(r#\"\"a\\\"b\"\"#)"
+---
+Ok(
+    [
+        Token {
+            kind: StringLiteral(
+                "a\"b",
+            ),
+            span: Span {
+                start: 0,
+                end: 6,
+            },
+        },
+        Token {
+            kind: Eof,
+            span: Span {
+                start: 6,
+                end: 6,
+            },
+        },
+    ],
+)

@@ -1,0 +1,15 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"# a comment\")"
+---
+Ok(
+    [
+        Token {
+            kind: Eof,
+            span: Span {
+                start: 11,
+                end: 11,
+            },
+        },
+    ],
+)

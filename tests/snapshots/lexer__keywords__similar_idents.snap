@@ -1,0 +1,42 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"andy ore notice\")"
+---
+Ok(
+    [
+        Token {
+            kind: Identifier(
+                "andy",
+            ),
+            span: Span {
+                start: 0,
+                end: 4,
+            },
+        },
+        Token {
+            kind: Identifier(
+                "ore",
+            ),
+            span: Span {
+                start: 5,
+                end: 8,
+            },
+        },
+        Token {
+            kind: Identifier(
+                "notice",
+            ),
+            span: Span {
+                start: 9,
+                end: 15,
+            },
+        },
+        Token {
+            kind: Eof,
+            span: Span {
+                start: 15,
+                end: 15,
+            },
+        },
+    ],
+)

@@ -1,0 +1,24 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"_\")"
+---
+Ok(
+    [
+        Token {
+            kind: Identifier(
+                "_",
+            ),
+            span: Span {
+                start: 0,
+                end: 1,
+            },
+        },
+        Token {
+            kind: Eof,
+            span: Span {
+                start: 1,
+                end: 1,
+            },
+        },
+    ],
+)

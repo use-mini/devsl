@@ -1,30 +1,30 @@
 ---
 source: tests/lexer.rs
-expression: "lex(\".5\")"
+expression: "lex(\"# a comment\\nfoo\")"
 ---
 Ok(
     [
         Token {
-            kind: Dot,
+            kind: Newline,
             span: Span {
-                start: 0,
-                end: 1,
+                start: 11,
+                end: 12,
             },
         },
         Token {
-            kind: Int(
-                5,
+            kind: Identifier(
+                "foo",
             ),
             span: Span {
-                start: 1,
-                end: 2,
+                start: 12,
+                end: 15,
             },
         },
         Token {
             kind: Eof,
             span: Span {
-                start: 2,
-                end: 2,
+                start: 15,
+                end: 15,
             },
         },
     ],

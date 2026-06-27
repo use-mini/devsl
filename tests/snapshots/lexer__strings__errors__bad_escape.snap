@@ -1,0 +1,13 @@
+---
+source: tests/lexer.rs
+expression: "lex(r#\"\"\\x\"\"#)"
+---
+Err(
+    LexError {
+        message: "invalid escape sequence: x",
+        span: Span {
+            start: 0,
+            end: 3,
+        },
+    },
+)

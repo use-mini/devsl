@@ -1,22 +1,13 @@
 ---
 source: tests/lexer.rs
-expression: "lex(\".5\")"
+expression: "lex(\">=\")"
 ---
 Ok(
     [
         Token {
-            kind: Dot,
+            kind: GtEq,
             span: Span {
                 start: 0,
-                end: 1,
-            },
-        },
-        Token {
-            kind: Int(
-                5,
-            ),
-            span: Span {
-                start: 1,
                 end: 2,
             },
         },

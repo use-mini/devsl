@@ -1,0 +1,24 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"foo\")"
+---
+Ok(
+    [
+        Token {
+            kind: Identifier(
+                "foo",
+            ),
+            span: Span {
+                start: 0,
+                end: 3,
+            },
+        },
+        Token {
+            kind: Eof,
+            span: Span {
+                start: 3,
+                end: 3,
+            },
+        },
+    ],
+)

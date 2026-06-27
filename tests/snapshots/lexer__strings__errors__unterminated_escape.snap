@@ -1,0 +1,13 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"\\\"hello\\\\\")"
+---
+Err(
+    LexError {
+        message: "unterminated escape sequence",
+        span: Span {
+            start: 0,
+            end: 7,
+        },
+    },
+)

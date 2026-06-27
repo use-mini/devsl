@@ -1,0 +1,40 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"obj.@kebab-name\")"
+---
+Ok(
+    [
+        Token {
+            kind: Identifier(
+                "obj",
+            ),
+            span: Span {
+                start: 0,
+                end: 3,
+            },
+        },
+        Token {
+            kind: Dot,
+            span: Span {
+                start: 3,
+                end: 4,
+            },
+        },
+        Token {
+            kind: ExtendedIdentifier(
+                "kebab-name",
+            ),
+            span: Span {
+                start: 4,
+                end: 15,
+            },
+        },
+        Token {
+            kind: Eof,
+            span: Span {
+                start: 15,
+                end: 15,
+            },
+        },
+    ],
+)
