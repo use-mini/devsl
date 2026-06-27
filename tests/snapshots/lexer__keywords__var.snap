@@ -1,0 +1,22 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"var\")"
+---
+Ok(
+    [
+        Token {
+            kind: Var,
+            span: Span {
+                start: 0,
+                end: 3,
+            },
+        },
+        Token {
+            kind: Eof,
+            span: Span {
+                start: 3,
+                end: 3,
+            },
+        },
+    ],
+)

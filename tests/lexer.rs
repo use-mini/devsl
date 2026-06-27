@@ -227,8 +227,58 @@ mod keywords {
         insta::assert_debug_snapshot!(lex("not x"));
     }
     #[test]
+    fn var() {
+        insta::assert_debug_snapshot!(lex("var"));
+    }
+    #[test]
+    fn const_() {
+        insta::assert_debug_snapshot!(lex("const"));
+    }
+    #[test]
+    fn if_() {
+        insta::assert_debug_snapshot!(lex("if"));
+    }
+    #[test]
+    fn else_() {
+        insta::assert_debug_snapshot!(lex("else"));
+    }
+    #[test]
+    fn true_() {
+        insta::assert_debug_snapshot!(lex("true"));
+    }
+    #[test]
+    fn false_() {
+        insta::assert_debug_snapshot!(lex("false"));
+    }
+    #[test]
+    fn return_() {
+        insta::assert_debug_snapshot!(lex("return"));
+    }
+    #[test]
+    fn for_() {
+        insta::assert_debug_snapshot!(lex("for"));
+    }
+    #[test]
+    fn in_() {
+        insta::assert_debug_snapshot!(lex("in"));
+    }
+    #[test]
+    fn null() {
+        insta::assert_debug_snapshot!(lex("null"));
+    }
+    #[test]
+    fn fn_() {
+        insta::assert_debug_snapshot!(lex("fn"));
+    }
+    #[test]
     fn similar_idents() {
         insta::assert_debug_snapshot!(lex("andy ore notice"));
+    }
+    #[test]
+    fn similar_idents_extended() {
+        insta::assert_debug_snapshot!(lex(
+            "vary consts iffy elsewhere truely falsey returns forall input nullable fns"
+        ));
     }
 }
 

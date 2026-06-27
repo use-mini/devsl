@@ -1,0 +1,22 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"if\")"
+---
+Ok(
+    [
+        Token {
+            kind: If,
+            span: Span {
+                start: 0,
+                end: 2,
+            },
+        },
+        Token {
+            kind: Eof,
+            span: Span {
+                start: 2,
+                end: 2,
+            },
+        },
+    ],
+)

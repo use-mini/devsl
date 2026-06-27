@@ -1,0 +1,24 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"false\")"
+---
+Ok(
+    [
+        Token {
+            kind: Bool(
+                false,
+            ),
+            span: Span {
+                start: 0,
+                end: 5,
+            },
+        },
+        Token {
+            kind: Eof,
+            span: Span {
+                start: 5,
+                end: 5,
+            },
+        },
+    ],
+)

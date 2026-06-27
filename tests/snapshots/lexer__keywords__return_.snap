@@ -1,0 +1,22 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"return\")"
+---
+Ok(
+    [
+        Token {
+            kind: Return,
+            span: Span {
+                start: 0,
+                end: 6,
+            },
+        },
+        Token {
+            kind: Eof,
+            span: Span {
+                start: 6,
+                end: 6,
+            },
+        },
+    ],
+)

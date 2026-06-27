@@ -1,0 +1,114 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"vary consts iffy elsewhere truely falsey returns forall input nullable fns\")"
+---
+Ok(
+    [
+        Token {
+            kind: Identifier(
+                "vary",
+            ),
+            span: Span {
+                start: 0,
+                end: 4,
+            },
+        },
+        Token {
+            kind: Identifier(
+                "consts",
+            ),
+            span: Span {
+                start: 5,
+                end: 11,
+            },
+        },
+        Token {
+            kind: Identifier(
+                "iffy",
+            ),
+            span: Span {
+                start: 12,
+                end: 16,
+            },
+        },
+        Token {
+            kind: Identifier(
+                "elsewhere",
+            ),
+            span: Span {
+                start: 17,
+                end: 26,
+            },
+        },
+        Token {
+            kind: Identifier(
+                "truely",
+            ),
+            span: Span {
+                start: 27,
+                end: 33,
+            },
+        },
+        Token {
+            kind: Identifier(
+                "falsey",
+            ),
+            span: Span {
+                start: 34,
+                end: 40,
+            },
+        },
+        Token {
+            kind: Identifier(
+                "returns",
+            ),
+            span: Span {
+                start: 41,
+                end: 48,
+            },
+        },
+        Token {
+            kind: Identifier(
+                "forall",
+            ),
+            span: Span {
+                start: 49,
+                end: 55,
+            },
+        },
+        Token {
+            kind: Identifier(
+                "input",
+            ),
+            span: Span {
+                start: 56,
+                end: 61,
+            },
+        },
+        Token {
+            kind: Identifier(
+                "nullable",
+            ),
+            span: Span {
+                start: 62,
+                end: 70,
+            },
+        },
+        Token {
+            kind: Identifier(
+                "fns",
+            ),
+            span: Span {
+                start: 71,
+                end: 74,
+            },
+        },
+        Token {
+            kind: Eof,
+            span: Span {
+                start: 74,
+                end: 74,
+            },
+        },
+    ],
+)

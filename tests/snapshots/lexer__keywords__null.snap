@@ -1,0 +1,22 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"null\")"
+---
+Ok(
+    [
+        Token {
+            kind: Null,
+            span: Span {
+                start: 0,
+                end: 4,
+            },
+        },
+        Token {
+            kind: Eof,
+            span: Span {
+                start: 4,
+                end: 4,
+            },
+        },
+    ],
+)
