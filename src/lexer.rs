@@ -24,6 +24,8 @@ enum TokenKind {
     Identifier(String),
     Keyword(String),
     StringLiteral(String),
+    Int(i64),
+    Float(f64),
 
     OParen,
     CParen,
@@ -101,6 +103,8 @@ impl<'a> Lexer<'a> {
             unreachable!("lex already checks for end of input");
         };
         match c {
+            '0'..='9' => self.lex_number(start, false),
+            '.' if matches!(self.peek(), Some('0'..='9')) => self.lex_number(start, true),
             'a'..='z' | 'A'..='Z' | '_' => self.lex_identifier(start),
             '"' => self.lex_string_literal(start),
             '(' => Ok(Token::new(TokenKind::OParen, start, self.pos)),
@@ -108,6 +112,101 @@ impl<'a> Lexer<'a> {
             ';' => Ok(Token::new(TokenKind::SemiColon, start, self.pos)),
             '\n' => Ok(Token::new(TokenKind::Newline, start, self.pos)),
             _ => todo!("char {c:?} at pos {}", self.pos),
+        }
+    }
+
+    fn next_char_pos(&self) -> usize {
+        match self.peek() {
+            Some(c) => self.pos + c.len_utf8(),
+            None => self.pos,
+        }
+    }
+
+    fn lex_number(&mut self, start: usize, mut is_float: bool) -> Result<Token, LexError> {
+        let mut has_exp = false;
+        while let Some(c) = self.peek() {
+            match c {
+                '0'..='9' => {
+                    self.advance();
+                }
+                '_' => {
+                    self.advance();
+                    if !matches!(self.peek(), Some('0'..='9')) {
+                        let end = self.next_char_pos();
+                        return Err(LexError::new(
+                            format!(
+                                "invalid number literal: `_` must appear between digits: `{}`",
+                                &self.code[start..end]
+                            ),
+                            start,
+                            end,
+                        ));
+                    }
+                }
+                '.' if !is_float => {
+                    self.advance();
+                    is_float = true;
+                }
+                '.' => {
+                    return Err(LexError::new(
+                        format!(
+                            "invalid float number: `{}`. It contains two or more decimal points",
+                            &self.code[start..self.next_char_pos()]
+                        ),
+                        start,
+                        self.next_char_pos(),
+                    ));
+                }
+                'e' | 'E' if !has_exp => {
+                    self.advance();
+                    is_float = true;
+                    has_exp = true;
+                    if matches!(self.peek(), Some('+' | '-')) {
+                        self.advance();
+                    }
+                    if !matches!(self.peek(), Some('0'..='9')) {
+                        let end = self.next_char_pos();
+                        return Err(LexError::new(
+                            format!("invalid exponent: `{}`", &self.code[start..end]),
+                            start,
+                            end,
+                        ));
+                    }
+                }
+                _ => break,
+            }
+        }
+
+        if matches!(self.peek(), Some(c) if c.is_ascii_alphabetic() || c == '_') {
+            while let Some(c) = self.peek() {
+                if c.is_ascii_alphanumeric() || c == '_' {
+                    self.advance();
+                } else {
+                    break;
+                }
+            }
+            return Err(LexError::new(
+                format!("invalid number literal: `{}`", &self.code[start..self.pos]),
+                start,
+                self.pos,
+            ));
+        }
+
+        let number_string: String = self.code[start..self.pos]
+            .chars()
+            .filter(|&c| c != '_')
+            .collect();
+
+        if is_float {
+            let number = number_string
+                .parse::<f64>()
+                .map_err(|e| LexError::new(format!("invalid float: {e}"), start, self.pos))?;
+            Ok(Token::new(TokenKind::Float(number), start, self.pos))
+        } else {
+            let number = number_string
+                .parse::<i64>()
+                .map_err(|e| LexError::new(format!("invalid integer: {e}"), start, self.pos))?;
+            Ok(Token::new(TokenKind::Int(number), start, self.pos))
         }
     }
 
