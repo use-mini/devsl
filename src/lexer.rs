@@ -138,8 +138,7 @@ impl<'a> Lexer<'a> {
             unreachable!("lex already checks for end of input");
         };
         match c {
-            '0'..='9' => self.lex_number(start, false),
-            '.' if matches!(self.peek(), Some('0'..='9')) => self.lex_number(start, true),
+            '0'..='9' => self.lex_number(start),
             'a'..='z' | 'A'..='Z' | '_' => self.lex_identifier(start),
             '"' => self.lex_string_literal(start),
             '(' => Ok(Token::new(TokenKind::OParen, start, self.pos)),
@@ -204,8 +203,9 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn lex_number(&mut self, start: usize, mut is_float: bool) -> Result<Token, LexError> {
+    fn lex_number(&mut self, start: usize) -> Result<Token, LexError> {
         let mut has_exp = false;
+        let mut is_float = false;
         while let Some(c) = self.peek() {
             match c {
                 '0'..='9' => {
