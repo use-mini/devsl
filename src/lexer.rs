@@ -22,14 +22,40 @@ impl LexError {
 #[derive(Debug)]
 enum TokenKind {
     Identifier(String),
-    Keyword(String),
+    ExtendedIdentifier(String),
     StringLiteral(String),
     Int(i64),
     Float(f64),
 
     OParen,
     CParen,
+    OBracket,
+    CBracket,
+    OCurly,
+    CCurly,
+
+    Dot,
+    Comma,
+    Colon,
     SemiColon,
+
+    Plus,
+    Minus,
+    Star,
+    Slash,
+    Eq,
+    Lt,
+    Gt,
+    LtEq,
+    GtEq,
+    EqEq,
+    BangEq,
+    Or,
+    And,
+    Not,
+
+    Arrow,
+
     Newline,
     Eof,
 }
@@ -59,20 +85,20 @@ impl<'a> Lexer<'a> {
         Lexer { code, pos: 0 }
     }
 
-    pub fn is_at_end(&self) -> bool {
+    fn is_at_end(&self) -> bool {
         self.code.len() == self.pos
     }
 
-    pub fn peek(&self) -> Option<char> {
+    fn peek(&self) -> Option<char> {
         self.code[self.pos..].chars().next()
     }
 
-    pub fn peek_next(&self) -> Option<char> {
+    fn peek_next(&self) -> Option<char> {
         let c = self.peek()?;
         self.code[self.pos + c.len_utf8()..].chars().next()
     }
 
-    pub fn advance(&mut self) -> Option<char> {
+    fn advance(&mut self) -> Option<char> {
         let c = self.code[self.pos..].chars().next()?;
         self.pos = self.pos + c.len_utf8();
         Some(c)
@@ -82,10 +108,19 @@ impl<'a> Lexer<'a> {
         let mut tokens = Vec::new();
         while !self.is_at_end() {
             while let Some(c) = self.peek() {
-                if c == ' ' || c == '\t' {
-                    self.advance();
-                } else {
-                    break;
+                match c {
+                    ' ' | '\t' => {
+                        self.advance();
+                    }
+                    '#' => {
+                        while let Some(c) = self.peek() {
+                            if c == '\n' {
+                                break;
+                            }
+                            self.advance();
+                        }
+                    }
+                    _ => break,
                 }
             }
             if self.is_at_end() {
@@ -109,7 +144,54 @@ impl<'a> Lexer<'a> {
             '"' => self.lex_string_literal(start),
             '(' => Ok(Token::new(TokenKind::OParen, start, self.pos)),
             ')' => Ok(Token::new(TokenKind::CParen, start, self.pos)),
+            '[' => Ok(Token::new(TokenKind::OBracket, start, self.pos)),
+            ']' => Ok(Token::new(TokenKind::CBracket, start, self.pos)),
+            '{' => Ok(Token::new(TokenKind::OCurly, start, self.pos)),
+            '}' => Ok(Token::new(TokenKind::CCurly, start, self.pos)),
+            '@' => self.lex_extended_identifier(start),
+            '.' => Ok(Token::new(TokenKind::Dot, start, self.pos)),
+            ',' => Ok(Token::new(TokenKind::Comma, start, self.pos)),
+            ':' => Ok(Token::new(TokenKind::Colon, start, self.pos)),
             ';' => Ok(Token::new(TokenKind::SemiColon, start, self.pos)),
+            '+' => Ok(Token::new(TokenKind::Plus, start, self.pos)),
+            '-' if matches!(self.peek(), Some('>')) => {
+                self.advance();
+                Ok(Token::new(TokenKind::Arrow, start, self.pos))
+            }
+            '-' => Ok(Token::new(TokenKind::Minus, start, self.pos)),
+            '*' => Ok(Token::new(TokenKind::Star, start, self.pos)),
+            '/' => Ok(Token::new(TokenKind::Slash, start, self.pos)),
+            '=' if matches!(self.peek(), Some('=')) => {
+                self.advance();
+                Ok(Token::new(TokenKind::EqEq, start, self.pos))
+            }
+            '=' => Ok(Token::new(TokenKind::Eq, start, self.pos)),
+            '!' if matches!(self.peek(), Some('=')) => {
+                self.advance();
+                Ok(Token::new(TokenKind::BangEq, start, self.pos))
+            }
+            '<' if matches!(self.peek(), Some('=')) => {
+                self.advance();
+                Ok(Token::new(TokenKind::LtEq, start, self.pos))
+            }
+            '<' => Ok(Token::new(TokenKind::Lt, start, self.pos)),
+            '>' if matches!(self.peek(), Some('=')) => {
+                self.advance();
+                Ok(Token::new(TokenKind::GtEq, start, self.pos))
+            }
+            '>' => Ok(Token::new(TokenKind::Gt, start, self.pos)),
+
+            '`' => Err(LexError::new(
+                "backtick is reserved for future interpolated strings".into(),
+                start,
+                self.pos,
+            )),
+            '$' => Err(LexError::new(
+                "`$` is reserved for future interpolated strings".into(),
+                start,
+                self.pos,
+            )),
+
             '\n' => Ok(Token::new(TokenKind::Newline, start, self.pos)),
             _ => todo!("char {c:?} at pos {}", self.pos),
         }
@@ -222,6 +304,9 @@ impl<'a> Lexer<'a> {
         let name = self.code[start..self.pos].to_string();
 
         match name.as_str() {
+            "or" => Ok(Token::new(TokenKind::Or, start, self.pos)),
+            "and" => Ok(Token::new(TokenKind::And, start, self.pos)),
+            "not" => Ok(Token::new(TokenKind::Not, start, self.pos)),
             _ => Ok(Token::new(TokenKind::Identifier(name), start, self.pos)),
         }
     }
@@ -235,6 +320,9 @@ impl<'a> Lexer<'a> {
                     self.advance();
                     match self.advance() {
                         Some('"') => string_literal.push('"'),
+                        Some('n') => string_literal.push('\n'),
+                        Some('t') => string_literal.push('\t'),
+                        Some('\\') => string_literal.push('\\'),
                         Some(other) => {
                             return Err(LexError::new(
                                 format!("invalid escape sequence: {other}"),
@@ -251,6 +339,16 @@ impl<'a> Lexer<'a> {
                         }
                     }
                 }
+                '\n' => {
+                    return Err(LexError::new(
+                        format!(
+                            "string literal cannot span multiple lines: `{}`",
+                            &self.code[start..self.pos]
+                        ),
+                        start,
+                        self.pos,
+                    ));
+                }
                 _ => {
                     string_literal.push(c);
                     self.advance();
@@ -259,7 +357,10 @@ impl<'a> Lexer<'a> {
         }
         if self.peek().is_none() {
             return Err(LexError::new(
-                "unterminated string literal".into(),
+                format!(
+                    "unterminated string literal: `{}`",
+                    &self.code[start..self.pos]
+                ),
                 start,
                 self.pos,
             ));
@@ -270,5 +371,30 @@ impl<'a> Lexer<'a> {
             start,
             self.pos,
         ))
+    }
+
+    fn lex_extended_identifier(&mut self, start: usize) -> Result<Token, LexError> {
+        let name_start = self.pos;
+        while let Some(c) = self.peek() {
+            if c.is_ascii_alphanumeric() || c == '_' || c == '-' {
+                self.advance();
+            } else {
+                break;
+            }
+        }
+        if name_start == self.pos {
+            Err(LexError::new(
+                "expected identifier after `@`".into(),
+                start,
+                self.next_char_pos(),
+            ))
+        } else {
+            let name = self.code[name_start..self.pos].to_string();
+            Ok(Token::new(
+                TokenKind::ExtendedIdentifier(name),
+                start,
+                self.pos,
+            ))
+        }
     }
 }
