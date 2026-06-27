@@ -1,7 +1,7 @@
 #[derive(Debug)]
 pub struct Span {
-    start: usize,
-    end: usize,
+    pub start: usize,
+    pub end: usize,
 }
 
 #[derive(Debug)]
@@ -20,7 +20,7 @@ impl LexError {
 }
 
 #[derive(Debug)]
-enum TokenKind {
+pub enum TokenKind {
     Identifier(String),
     ExtendedIdentifier(String),
     StringLiteral(String),
@@ -73,8 +73,8 @@ enum TokenKind {
 
 #[derive(Debug)]
 pub struct Token {
-    kind: TokenKind,
-    span: Span,
+    pub kind: TokenKind,
+    pub span: Span,
 }
 
 impl Token {
@@ -203,7 +203,11 @@ impl<'a> Lexer<'a> {
             )),
 
             '\n' => Ok(Token::new(TokenKind::Newline, start, self.pos)),
-            _ => todo!("char {c:?} at pos {}", self.pos),
+            _ => Err(LexError::new(
+                format!("unexpected character: {c:?}"),
+                start,
+                self.pos,
+            )),
         }
     }
 
