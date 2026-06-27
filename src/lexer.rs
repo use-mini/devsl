@@ -56,6 +56,17 @@ enum TokenKind {
 
     Arrow,
 
+    Var,
+    Const,
+    If,
+    Else,
+    Bool(bool),
+    Return,
+    For,
+    In,
+    Null,
+    Fn,
+
     Newline,
     Eof,
 }
@@ -307,6 +318,17 @@ impl<'a> Lexer<'a> {
             "or" => Ok(Token::new(TokenKind::Or, start, self.pos)),
             "and" => Ok(Token::new(TokenKind::And, start, self.pos)),
             "not" => Ok(Token::new(TokenKind::Not, start, self.pos)),
+            "var" => Ok(Token::new(TokenKind::Var, start, self.pos)),
+            "const" => Ok(Token::new(TokenKind::Const, start, self.pos)),
+            "if" => Ok(Token::new(TokenKind::If, start, self.pos)),
+            "else" => Ok(Token::new(TokenKind::Else, start, self.pos)),
+            "true" => Ok(Token::new(TokenKind::Bool(true), start, self.pos)),
+            "false" => Ok(Token::new(TokenKind::Bool(false), start, self.pos)),
+            "return" => Ok(Token::new(TokenKind::Return, start, self.pos)),
+            "for" => Ok(Token::new(TokenKind::For, start, self.pos)),
+            "in" => Ok(Token::new(TokenKind::In, start, self.pos)),
+            "null" => Ok(Token::new(TokenKind::Null, start, self.pos)),
+            "fn" => Ok(Token::new(TokenKind::Fn, start, self.pos)),
             _ => Ok(Token::new(TokenKind::Identifier(name), start, self.pos)),
         }
     }
