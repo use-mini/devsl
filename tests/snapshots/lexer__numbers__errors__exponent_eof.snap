@@ -1,0 +1,13 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"1e\")"
+---
+Err(
+    LexError {
+        message: "invalid exponent: `1e`",
+        span: Span {
+            start: 0,
+            end: 2,
+        },
+    },
+)

@@ -1,0 +1,24 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"1_000_000\")"
+---
+Ok(
+    [
+        Token {
+            kind: Int(
+                1000000,
+            ),
+            span: Span {
+                start: 0,
+                end: 9,
+            },
+        },
+        Token {
+            kind: Eof,
+            span: Span {
+                start: 9,
+                end: 9,
+            },
+        },
+    ],
+)

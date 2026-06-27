@@ -1,0 +1,24 @@
+---
+source: tests/lexer.rs
+expression: "lex(\".5\")"
+---
+Ok(
+    [
+        Token {
+            kind: Float(
+                0.5,
+            ),
+            span: Span {
+                start: 0,
+                end: 2,
+            },
+        },
+        Token {
+            kind: Eof,
+            span: Span {
+                start: 2,
+                end: 2,
+            },
+        },
+    ],
+)

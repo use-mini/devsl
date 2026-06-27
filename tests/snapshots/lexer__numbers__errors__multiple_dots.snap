@@ -1,0 +1,13 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"1.2.3\")"
+---
+Err(
+    LexError {
+        message: "invalid float number: `1.2.`. It contains two or more decimal points",
+        span: Span {
+            start: 0,
+            end: 4,
+        },
+    },
+)

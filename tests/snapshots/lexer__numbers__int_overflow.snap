@@ -1,0 +1,13 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"99999999999999999999\")"
+---
+Err(
+    LexError {
+        message: "invalid integer: number too large to fit in target type",
+        span: Span {
+            start: 0,
+            end: 20,
+        },
+    },
+)

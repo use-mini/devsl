@@ -1,0 +1,13 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"42abc\")"
+---
+Err(
+    LexError {
+        message: "invalid number literal: `42abc`",
+        span: Span {
+            start: 0,
+            end: 5,
+        },
+    },
+)

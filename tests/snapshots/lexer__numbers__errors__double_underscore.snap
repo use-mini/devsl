@@ -1,0 +1,13 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"1__2\")"
+---
+Err(
+    LexError {
+        message: "invalid number literal: `_` must appear between digits: `1__`",
+        span: Span {
+            start: 0,
+            end: 3,
+        },
+    },
+)

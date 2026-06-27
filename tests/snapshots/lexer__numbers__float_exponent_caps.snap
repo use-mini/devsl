@@ -1,0 +1,24 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"1E10\")"
+---
+Ok(
+    [
+        Token {
+            kind: Float(
+                10000000000.0,
+            ),
+            span: Span {
+                start: 0,
+                end: 4,
+            },
+        },
+        Token {
+            kind: Eof,
+            span: Span {
+                start: 4,
+                end: 4,
+            },
+        },
+    ],
+)
