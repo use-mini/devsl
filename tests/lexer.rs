@@ -420,3 +420,16 @@ mod reserved {
         insta::assert_debug_snapshot!(lex("$"));
     }
 }
+
+mod unknown {
+    use crate::lex;
+
+    #[test]
+    fn ascii_punct() {
+        insta::assert_debug_snapshot!(lex("~"));
+    }
+    #[test]
+    fn non_ascii() {
+        insta::assert_debug_snapshot!(lex("é"));
+    }
+}

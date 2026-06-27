@@ -1,0 +1,13 @@
+---
+source: tests/lexer.rs
+expression: "lex(\"é\")"
+---
+Err(
+    LexError {
+        message: "unexpected character: 'é'",
+        span: Span {
+            start: 0,
+            end: 2,
+        },
+    },
+)
