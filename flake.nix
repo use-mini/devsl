@@ -27,6 +27,7 @@
             pkgs.rustfmt
             pkgs.clippy
             pkgs.rust-analyzer
+	    pkgs.cargo-insta
 
             pkgs.cocogitto
           ];
