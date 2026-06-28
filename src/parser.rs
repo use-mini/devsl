@@ -12,7 +12,7 @@ impl ParseError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum BinOp {
     Add,
     Sub,

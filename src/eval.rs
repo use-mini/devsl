@@ -1,7 +1,7 @@
 use std::{collections::HashMap, error::Error};
 
 use crate::lexer::Span;
-use crate::parser::{Expr, Stmt};
+use crate::parser::{BinOp, Expr, Stmt};
 
 #[derive(Debug, Clone)]
 enum Value {
@@ -94,10 +94,64 @@ fn eval_expr(expr: &Expr, ctx: &mut EvalCtx) -> Result<Option<Value>, EvalError>
                 *span,
             )),
         },
-        Expr::Binary { span, .. } | Expr::Call { span, .. } => Err(EvalError::new(
+        Expr::Binary { op, lhs, rhs, span } => {
+            let l = require_value(eval_expr(lhs, ctx)?, lhs.span())?;
+            let r = require_value(eval_expr(rhs, ctx)?, rhs.span())?;
+            eval_binary(*op, l, r, *span).map(Some)
+        }
+        Expr::Call { span, .. } => Err(EvalError::new(
             ErrorCategory::Runtime,
             "expression kind not implemented".into(),
             *span,
+        )),
+    }
+}
+
+fn require_value(v: Option<Value>, span: Span) -> Result<Value, EvalError> {
+    v.ok_or_else(|| EvalError::new(ErrorCategory::Type, "expected a value".into(), span))
+}
+
+fn eval_binary(op: BinOp, lhs: Value, rhs: Value, span: Span) -> Result<Value, EvalError> {
+    use BinOp::*;
+    use Value::*;
+    match (op, lhs, rhs) {
+        (Add, Int(a), Int(b)) => a
+            .checked_add(b)
+            .map(Int)
+            .ok_or_else(|| EvalError::new(ErrorCategory::Runtime, "integer overflow".into(), span)),
+        (Sub, Int(a), Int(b)) => a
+            .checked_sub(b)
+            .map(Int)
+            .ok_or_else(|| EvalError::new(ErrorCategory::Runtime, "integer overflow".into(), span)),
+        (Mul, Int(a), Int(b)) => a
+            .checked_mul(b)
+            .map(Int)
+            .ok_or_else(|| EvalError::new(ErrorCategory::Runtime, "integer overflow".into(), span)),
+        (Div, Int(a), Int(b)) => {
+            if b == 0 {
+                Err(EvalError::new(
+                    ErrorCategory::Runtime,
+                    "division by zero".into(),
+                    span,
+                ))
+            } else {
+                Ok(Float(a as f64 / b as f64))
+            }
+        }
+        (Add, Float(a), Float(b)) => Ok(Float(a + b)),
+        (Sub, Float(a), Float(b)) => Ok(Float(a - b)),
+        (Mul, Float(a), Float(b)) => Ok(Float(a * b)),
+        (Div, Float(a), Float(b)) => Ok(Float(a / b)),
+
+        (op, Int(a), Float(b)) => eval_binary(op, Float(a as f64), Float(b), span),
+        (op, Float(a), Int(b)) => eval_binary(op, Float(a), Float(b as f64), span),
+
+        (Add, String(a), String(b)) => Ok(String(a + &b)),
+
+        (op, l, r) => Err(EvalError::new(
+            ErrorCategory::Type,
+            format!("`{op:?}` not defined for {l:?} and {r:?}"),
+            span,
         )),
     }
 }
@@ -225,5 +279,98 @@ mod tests {
             Stmt::Expr(ident("pi")),
         ];
         run_stmts(&stmts).unwrap();
+    }
+
+    use crate::parser::BinOp;
+
+    fn bin(op: BinOp, lhs: Expr, rhs: Expr) -> Expr {
+        Expr::Binary {
+            op,
+            lhs: Box::new(lhs),
+            rhs: Box::new(rhs),
+            span: no_span(),
+        }
+    }
+
+    fn eval_to_value(expr: Expr) -> Result<Value, EvalError> {
+        let mut buf = Vec::<u8>::new();
+        let mut ctx = EvalCtx {
+            env: Env::new(),
+            out: &mut buf,
+        };
+        eval_expr(&expr, &mut ctx).map(|o| o.unwrap())
+    }
+
+    #[test]
+    fn add_int_int() {
+        assert!(matches!(
+            eval_to_value(bin(
+                BinOp::Add,
+                Expr::Int(2, no_span()),
+                Expr::Int(3, no_span())
+            )),
+            Ok(Value::Int(5))
+        ));
+    }
+
+    #[test]
+    fn add_int_float_promotes() {
+        assert!(matches!(
+            eval_to_value(bin(BinOp::Add, Expr::Int(2, no_span()), Expr::Float(1.5, no_span()))),
+            Ok(Value::Float(v)) if (v - 3.5).abs() < 1e-9
+        ));
+    }
+
+    #[test]
+    fn div_int_int_is_float() {
+        assert!(matches!(
+            eval_to_value(bin(BinOp::Div, Expr::Int(1, no_span()), Expr::Int(2, no_span()))),
+            Ok(Value::Float(v)) if (v - 0.5).abs() < 1e-9
+        ));
+    }
+
+    #[test]
+    fn string_plus_string_concats() {
+        let expr = bin(
+            BinOp::Add,
+            Expr::String("hello ".into(), no_span()),
+            Expr::String("world".into(), no_span()),
+        );
+        match eval_to_value(expr) {
+            Ok(Value::String(s)) => assert_eq!(s, "hello world"),
+            other => panic!("{other:?}"),
+        }
+    }
+
+    #[test]
+    fn string_plus_int_is_type_error() {
+        let expr = bin(
+            BinOp::Add,
+            Expr::String("x".into(), no_span()),
+            Expr::Int(1, no_span()),
+        );
+        assert!(matches!(
+            eval_to_value(expr).unwrap_err().category,
+            ErrorCategory::Type
+        ));
+    }
+
+    #[test]
+    fn int_overflow_traps() {
+        let expr = bin(
+            BinOp::Add,
+            Expr::Int(i64::MAX, no_span()),
+            Expr::Int(1, no_span()),
+        );
+        let err = eval_to_value(expr).unwrap_err();
+        assert!(matches!(err.category, ErrorCategory::Runtime));
+        assert!(err.message.contains("overflow"));
+    }
+
+    #[test]
+    fn int_div_by_zero() {
+        let expr = bin(BinOp::Div, Expr::Int(1, no_span()), Expr::Int(0, no_span()));
+        let err = eval_to_value(expr).unwrap_err();
+        assert!(matches!(err.category, ErrorCategory::Runtime));
     }
 }
