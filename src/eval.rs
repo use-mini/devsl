@@ -138,7 +138,11 @@ fn eval_expr(expr: &Expr, ctx: &mut EvalCtx) -> Result<Option<Value>, EvalError>
                 arg_values.push(v);
             }
 
-            (builtin.func)(ctx, &arg_values, *span)
+            (builtin.func)(BuiltinCall {
+                ctx,
+                args: &arg_values,
+                span: *span,
+            })
         }
     }
 }
@@ -232,9 +236,15 @@ impl EvalError {
     }
 }
 
+struct BuiltinCall<'a, 'w> {
+    ctx: &'a mut EvalCtx<'w>,
+    args: &'a [Value],
+    span: Span,
+}
+
 struct Builtin {
     name: &'static str,
-    func: fn(&mut EvalCtx, &[Value], Span) -> Result<Option<Value>, EvalError>,
+    func: fn(BuiltinCall<'_, '_>) -> Result<Option<Value>, EvalError>,
 }
 
 const BUILTINS: &[Builtin] = &[Builtin {
@@ -250,20 +260,22 @@ fn builtin_is_name(name: &str) -> bool {
     BUILTINS.iter().any(|b| b.name == name)
 }
 
-fn builtin_print(
-    ctx: &mut EvalCtx,
-    args: &[Value],
-    span: Span,
-) -> Result<Option<Value>, EvalError> {
+fn builtin_print(call: BuiltinCall) -> Result<Option<Value>, EvalError> {
     let mut first = true;
-    for v in args {
+    for v in call.args {
         if !first {
-            ctx.out.write_all(b" ").map_err(|e| io_err(e, span))?;
+            call.ctx
+                .out
+                .write_all(b" ")
+                .map_err(|e| io_err(e, call.span))?;
         }
         first = false;
-        write_value(ctx.out, v).map_err(|e| io_err(e, span))?;
+        write_value(call.ctx.out, v).map_err(|e| io_err(e, call.span))?;
     }
-    ctx.out.write_all(b"\n").map_err(|e| io_err(e, span))?;
+    call.ctx
+        .out
+        .write_all(b"\n")
+        .map_err(|e| io_err(e, call.span))?;
     Ok(None)
 }
 
