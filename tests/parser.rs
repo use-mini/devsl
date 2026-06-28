@@ -81,6 +81,27 @@ mod statements {
     }
 }
 
+mod numbers {
+    use crate::parse;
+
+    #[test]
+    fn int_literal() {
+        insta::assert_debug_snapshot!(parse("42"));
+    }
+    #[test]
+    fn float_literal() {
+        insta::assert_debug_snapshot!(parse("3.14"));
+    }
+    #[test]
+    fn call_with_int_arg() {
+        insta::assert_debug_snapshot!(parse("print(42)"));
+    }
+    #[test]
+    fn call_with_float_arg() {
+        insta::assert_debug_snapshot!(parse("print(3.14)"));
+    }
+}
+
 mod errors {
     use crate::parse;
 

@@ -1,0 +1,17 @@
+---
+source: tests/parser.rs
+expression: "parse(\"42\")"
+---
+Ok(
+    [
+        Expr(
+            Int(
+                42,
+                Span {
+                    start: 0,
+                    end: 2,
+                },
+            ),
+        ),
+    ],
+)

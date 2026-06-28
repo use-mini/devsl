@@ -1,0 +1,32 @@
+---
+source: tests/parser.rs
+expression: "parse(\"print(3.14)\")"
+---
+Ok(
+    [
+        Expr(
+            Call {
+                callee: Identifier(
+                    "print",
+                    Span {
+                        start: 0,
+                        end: 5,
+                    },
+                ),
+                args: [
+                    Float(
+                        3.14,
+                        Span {
+                            start: 6,
+                            end: 10,
+                        },
+                    ),
+                ],
+                span: Span {
+                    start: 0,
+                    end: 11,
+                },
+            },
+        ),
+    ],
+)
