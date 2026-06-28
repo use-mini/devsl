@@ -16,6 +16,8 @@ impl ParseError {
 pub enum Expr {
     String(String, Span),
     Identifier(String, Span),
+    Int(i64, Span),
+    Float(f64, Span),
     Call {
         callee: Box<Expr>,
         args: Vec<Expr>,
@@ -28,6 +30,8 @@ impl Expr {
         match self {
             Expr::String(_, span) => *span,
             Expr::Identifier(_, span) => *span,
+            Expr::Int(_, span) => *span,
+            Expr::Float(_, span) => *span,
             Expr::Call { span, .. } => *span,
         }
     }
@@ -104,6 +108,8 @@ impl Parser {
         self.advance();
         match token.kind {
             TokenKind::StringLiteral(s) => Ok(Expr::String(s, token.span)),
+            TokenKind::Int(i) => Ok(Expr::Int(i, token.span)),
+            TokenKind::Float(f) => Ok(Expr::Float(f, token.span)),
             TokenKind::Identifier(ref identifier) => {
                 if matches!(&self.peek().kind, TokenKind::OParen) {
                     self.advance();
