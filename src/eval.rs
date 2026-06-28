@@ -40,6 +40,28 @@ pub struct EvalCtx<'w> {
     pub out: &'w mut dyn std::io::Write,
 }
 
+fn bind(
+    ctx: &mut EvalCtx,
+    name: &str,
+    value: &Expr,
+    span: Span,
+    is_const: bool,
+) -> Result<(), EvalError> {
+    let v = match eval_expr(value, ctx)? {
+        Some(v) => v,
+        None => {
+            return Err(EvalError::new(
+                ErrorCategory::Type,
+                "cannot bind an expressions that doesn't return a value".into(),
+                span,
+            ));
+        }
+    };
+
+    ctx.env.define(name.to_string(), v, is_const);
+    Ok(())
+}
+
 pub fn eval(stmts: &[Stmt], ctx: &mut EvalCtx) -> Result<(), EvalError> {
     for stmt in stmts {
         eval_stmt(stmt, ctx)?;
@@ -54,11 +76,8 @@ fn eval_stmt(stmt: &Stmt, ctx: &mut EvalCtx) -> Result<(), EvalError> {
             let _ = eval_expr(e, ctx)?;
             Ok(())
         }
-        Stmt::Var { span, .. } | Stmt::Const { span, .. } => Err(EvalError::new(
-            ErrorCategory::Runtime,
-            "var/const not implemented yet".into(),
-            *span,
-        )),
+        Stmt::Var { name, value, span } => bind(ctx, name, value, *span, false),
+        Stmt::Const { name, value, span } => bind(ctx, name, value, *span, true),
     }
 }
 
@@ -168,5 +187,43 @@ mod tests {
         let err = run_stmts(&stmts).unwrap_err();
         assert!(matches!(err.category, ErrorCategory::Name));
         assert!(err.message.contains("nope"));
+    }
+
+    fn ident(name: &str) -> Expr {
+        Expr::Identifier(name.into(), no_span())
+    }
+
+    fn var_stmt(name: &str, value: Expr) -> Stmt {
+        Stmt::Var {
+            name: name.into(),
+            value,
+            span: no_span(),
+        }
+    }
+
+    fn const_stmt(name: &str, value: Expr) -> Stmt {
+        Stmt::Const {
+            name: name.into(),
+            value,
+            span: no_span(),
+        }
+    }
+
+    #[test]
+    fn var_binds_value() {
+        let stmts = vec![
+            var_stmt("x", Expr::Int(7, no_span())),
+            Stmt::Expr(ident("x")),
+        ];
+        run_stmts(&stmts).unwrap();
+    }
+
+    #[test]
+    fn const_binds_value() {
+        let stmts = vec![
+            const_stmt("pi", Expr::Float(3.14, no_span())),
+            Stmt::Expr(ident("pi")),
+        ];
+        run_stmts(&stmts).unwrap();
     }
 }
