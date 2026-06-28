@@ -260,6 +260,10 @@ const BUILTINS: &[Builtin] = &[
         name: "int",
         func: builtin_int,
     },
+    Builtin {
+        name: "float",
+        func: builtin_float,
+    },
 ];
 
 fn builtin_lookup(name: &str) -> Option<&'static Builtin> {
@@ -344,6 +348,30 @@ fn builtin_int(call: BuiltinCall) -> Result<Option<Value>, EvalError> {
         })?,
     };
     Ok(Some(Value::Int(int)))
+}
+
+fn builtin_float(call: BuiltinCall) -> Result<Option<Value>, EvalError> {
+    if call.args.len() != 1 {
+        return Err(EvalError::new(
+            ErrorCategory::Type,
+            format!("`float` takes 1 argument, got {}", call.args.len()),
+            call.span,
+        ));
+    }
+
+    let float = match &call.args[0] {
+        Value::Int(int) => *int as f64,
+        Value::Float(float) => *float,
+        Value::String(string) => string.parse::<f64>().map_err(|e| {
+            EvalError::with_cause(
+                ErrorCategory::Type,
+                format!("cannot parse `{string}` as float"),
+                call.span,
+                Box::new(e),
+            )
+        })?,
+    };
+    Ok(Some(Value::Float(float)))
 }
 
 fn write_value(w: &mut dyn std::io::Write, v: &Value) -> std::io::Result<()> {
