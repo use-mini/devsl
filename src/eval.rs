@@ -298,11 +298,9 @@ fn builtin_string(call: BuiltinCall) -> Result<Option<Value>, EvalError> {
         ));
     }
 
-    let s = match &call.args[0] {
-        Value::Int(int) => int.to_string(),
-        Value::Float(float) => float.to_string(),
-        Value::String(string) => string.clone(),
-    };
+    let mut buf = Vec::<u8>::new();
+    write_value(&mut buf, &call.args[0]).map_err(|e| io_err(e, call.span))?;
+    let s = String::from_utf8(buf).expect("write_value emits valid utf8");
     Ok(Some(Value::String(s)))
 }
 
