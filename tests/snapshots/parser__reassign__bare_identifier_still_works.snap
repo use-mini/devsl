@@ -1,0 +1,17 @@
+---
+source: tests/parser.rs
+expression: "parse(\"x\")"
+---
+Ok(
+    [
+        Expr(
+            Identifier(
+                "x",
+                Span {
+                    start: 0,
+                    end: 1,
+                },
+            ),
+        ),
+    ],
+)

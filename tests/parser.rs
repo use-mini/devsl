@@ -313,6 +313,39 @@ mod blocks {
     }
 }
 
+mod reassign {
+    use crate::parse;
+
+    #[test]
+    fn reassign_int() {
+        insta::assert_debug_snapshot!(parse("x = 5"));
+    }
+    #[test]
+    fn reassign_expression() {
+        insta::assert_debug_snapshot!(parse("x = 1 + 2"));
+    }
+    #[test]
+    fn reassign_string() {
+        insta::assert_debug_snapshot!(parse(r#"x = "hello""#));
+    }
+    #[test]
+    fn reassign_then_use() {
+        insta::assert_debug_snapshot!(parse("x = 5\nprint(x)"));
+    }
+    #[test]
+    fn reassign_missing_value() {
+        insta::assert_debug_snapshot!(parse("x ="));
+    }
+    #[test]
+    fn bare_identifier_still_works() {
+        insta::assert_debug_snapshot!(parse("x"));
+    }
+    #[test]
+    fn call_still_works() {
+        insta::assert_debug_snapshot!(parse("x()"));
+    }
+}
+
 mod errors {
     use crate::parse;
 

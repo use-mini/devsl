@@ -1,0 +1,22 @@
+---
+source: tests/parser.rs
+expression: "parse(\"x = 5\")"
+---
+Ok(
+    [
+        Reassign {
+            name: "x",
+            value: Int(
+                5,
+                Span {
+                    start: 4,
+                    end: 5,
+                },
+            ),
+            span: Span {
+                start: 0,
+                end: 5,
+            },
+        },
+    ],
+)

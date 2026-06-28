@@ -1,0 +1,46 @@
+---
+source: tests/parser.rs
+expression: "parse(\"x = 5\\nprint(x)\")"
+---
+Ok(
+    [
+        Reassign {
+            name: "x",
+            value: Int(
+                5,
+                Span {
+                    start: 4,
+                    end: 5,
+                },
+            ),
+            span: Span {
+                start: 0,
+                end: 5,
+            },
+        },
+        Expr(
+            Call {
+                callee: Identifier(
+                    "print",
+                    Span {
+                        start: 6,
+                        end: 11,
+                    },
+                ),
+                args: [
+                    Identifier(
+                        "x",
+                        Span {
+                            start: 12,
+                            end: 13,
+                        },
+                    ),
+                ],
+                span: Span {
+                    start: 6,
+                    end: 14,
+                },
+            },
+        ),
+    ],
+)
