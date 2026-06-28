@@ -101,6 +101,11 @@ pub enum Stmt {
         stmts: Vec<Stmt>,
         span: Span,
     },
+    Reassign {
+        name: String,
+        value: Expr,
+        span: Span,
+    },
 }
 
 pub struct Parser {
@@ -115,6 +120,15 @@ impl Parser {
 
     fn peek(&self) -> &Token {
         &self.tokens[self.pos]
+    }
+
+    fn peek_next(&self) -> &Token {
+        let idx = self.pos + 1;
+        if idx >= self.tokens.len() {
+            &self.tokens[self.tokens.len() - 1] // Eof
+        } else {
+            &self.tokens[idx]
+        }
     }
 
     fn is_at_end(&self) -> bool {
@@ -163,6 +177,9 @@ impl Parser {
             TokenKind::Var => self.parse_binding(true),
             TokenKind::Const => self.parse_binding(false),
             TokenKind::OCurly => self.parse_block(),
+            TokenKind::Identifier(_) if matches!(self.peek_next().kind, TokenKind::Eq) => {
+                self.parse_reassign()
+            }
             _ => Ok(Stmt::Expr(self.parse_expr()?)),
         }
     }
@@ -262,6 +279,27 @@ impl Parser {
                 end: ccurly_span.end,
             },
         })
+    }
+
+    fn parse_reassign(&mut self) -> Result<Stmt, ParseError> {
+        let (name, span) = match &self.peek().kind {
+            TokenKind::Identifier(identifier) => (identifier.clone(), self.peek().span),
+            _ => unreachable!("dispatch guarantees Identifier"),
+        };
+        self.advance(); // identifier
+        self.advance(); // `=`
+        let value = self.parse_expr().map_err(|e| {
+            ParseError::new(
+                format!("expected expression after `=`: {}", e.message),
+                e.span,
+            )
+        })?;
+
+        let span = Span {
+            start: span.start,
+            end: value.span().end,
+        };
+        Ok(Stmt::Reassign { name, value, span })
     }
 
     fn parse_expr(&mut self) -> Result<Expr, ParseError> {
