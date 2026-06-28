@@ -65,6 +65,16 @@ impl Expr {
 #[derive(Debug)]
 pub enum Stmt {
     Expr(Expr),
+    Var {
+        name: String,
+        value: Expr,
+        span: Span,
+    },
+    Const {
+        name: String,
+        value: Expr,
+        span: Span,
+    },
 }
 
 pub struct Parser {
@@ -101,7 +111,7 @@ impl Parser {
             if self.is_at_end() {
                 break;
             }
-            exprs.push(Stmt::Expr(self.parse_expr()?));
+            exprs.push(self.parse_stmt()?);
             let token = self.peek();
             match token.kind {
                 TokenKind::Newline | TokenKind::SemiColon => {
@@ -111,7 +121,7 @@ impl Parser {
                 _ => {
                     return Err(ParseError::new(
                         format!(
-                            "expected new line or `;` after expression, found {:?}",
+                            "expected new line or `;` after statement, found {:?}",
                             token.kind
                         ),
                         token.span,
@@ -120,6 +130,59 @@ impl Parser {
             }
         }
         Ok(exprs)
+    }
+
+    fn parse_stmt(&mut self) -> Result<Stmt, ParseError> {
+        match self.peek().kind {
+            TokenKind::Var => self.parse_binding(true),
+            TokenKind::Const => self.parse_binding(false),
+            _ => Ok(Stmt::Expr(self.parse_expr()?)),
+        }
+    }
+
+    fn parse_binding(&mut self, is_var: bool) -> Result<Stmt, ParseError> {
+        let kw_span = self.peek().span;
+        self.advance();
+
+        let name = match &self.peek().kind {
+            TokenKind::Identifier(identifier) => identifier.clone(),
+            _ => {
+                return Err(ParseError::new(
+                    format!(
+                        "expected identifier after `{}`, found {:?}",
+                        if is_var { "var" } else { "const" },
+                        self.peek().kind
+                    ),
+                    self.peek().span,
+                ));
+            }
+        };
+        self.advance();
+        if !matches!(self.peek().kind, TokenKind::Eq) {
+            return Err(ParseError::new(
+                format!(
+                    "expected `=` after binding name, found {:?}",
+                    self.peek().kind
+                ),
+                self.peek().span,
+            ));
+        }
+        self.advance();
+        let value = self.parse_expr().map_err(|e| {
+            ParseError::new(
+                format!("expected expression after `=`: {}", e.message),
+                e.span,
+            )
+        })?;
+        let span = Span {
+            start: kw_span.start,
+            end: value.span().end,
+        };
+        Ok(if is_var {
+            Stmt::Var { name, value, span }
+        } else {
+            Stmt::Const { name, value, span }
+        })
     }
 
     fn parse_expr(&mut self) -> Result<Expr, ParseError> {
