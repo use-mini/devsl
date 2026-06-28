@@ -26,6 +26,8 @@ pub enum Expr {
     Identifier(String, Span),
     Int(i64, Span),
     Float(f64, Span),
+    Bool(bool, Span),
+    Null(Span),
     Binary {
         op: BinOp,
         lhs: Box<Expr>,
@@ -46,6 +48,8 @@ impl Expr {
             Expr::Identifier(_, span) => *span,
             Expr::Int(_, span) => *span,
             Expr::Float(_, span) => *span,
+            Expr::Bool(_, span) => *span,
+            Expr::Null(span) => *span,
             Expr::Binary { span, .. } => *span,
             Expr::Call { span, .. } => *span,
         }
@@ -56,6 +60,8 @@ impl Expr {
             Expr::Identifier(identifier, _) => Expr::Identifier(identifier, span),
             Expr::Int(int, _) => Expr::Int(int, span),
             Expr::Float(float, _) => Expr::Float(float, span),
+            Expr::Bool(bool, _) => Expr::Bool(bool, span),
+            Expr::Null(_) => Expr::Null(span),
             Expr::Binary { op, lhs, rhs, .. } => Expr::Binary { op, lhs, rhs, span },
             Expr::Call { callee, args, .. } => Expr::Call { callee, args, span },
         }
@@ -271,6 +277,8 @@ impl Parser {
             TokenKind::StringLiteral(s) => Ok(Expr::String(s, token.span)),
             TokenKind::Int(i) => Ok(Expr::Int(i, token.span)),
             TokenKind::Float(f) => Ok(Expr::Float(f, token.span)),
+            TokenKind::Bool(b) => Ok(Expr::Bool(b, token.span)),
+            TokenKind::Null => Ok(Expr::Null(token.span)),
             TokenKind::Identifier(ref identifier) => {
                 if matches!(&self.peek().kind, TokenKind::OParen) {
                     self.advance();

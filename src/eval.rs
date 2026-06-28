@@ -137,13 +137,13 @@ fn eval_expr(expr: &Expr, ctx: &mut EvalCtx) -> Result<Option<Value>, EvalError>
                 let v = require_value(eval_expr(a, ctx)?, a.span())?;
                 arg_values.push(v);
             }
-
             (builtin.func)(BuiltinCall {
                 ctx,
                 args: &arg_values,
                 span: *span,
             })
         }
+        _ => todo!(),
     }
 }
 
