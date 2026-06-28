@@ -1,0 +1,30 @@
+---
+source: tests/parser.rs
+expression: "parse(\"{\\n\\nvar x = 1\\n\\n}\")"
+---
+Ok(
+    [
+        Block {
+            stmts: [
+                Var {
+                    name: "x",
+                    value: Int(
+                        1,
+                        Span {
+                            start: 11,
+                            end: 12,
+                        },
+                    ),
+                    span: Span {
+                        start: 3,
+                        end: 12,
+                    },
+                },
+            ],
+            span: Span {
+                start: 0,
+                end: 15,
+            },
+        },
+    ],
+)

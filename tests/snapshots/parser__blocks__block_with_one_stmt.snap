@@ -1,0 +1,40 @@
+---
+source: tests/parser.rs
+expression: "parse(r#\"{ print(\"hi\") }\"#)"
+---
+Ok(
+    [
+        Block {
+            stmts: [
+                Expr(
+                    Call {
+                        callee: Identifier(
+                            "print",
+                            Span {
+                                start: 2,
+                                end: 7,
+                            },
+                        ),
+                        args: [
+                            String(
+                                "hi",
+                                Span {
+                                    start: 8,
+                                    end: 12,
+                                },
+                            ),
+                        ],
+                        span: Span {
+                            start: 2,
+                            end: 13,
+                        },
+                    },
+                ),
+            ],
+            span: Span {
+                start: 0,
+                end: 15,
+            },
+        },
+    ],
+)

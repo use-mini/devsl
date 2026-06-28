@@ -284,6 +284,35 @@ mod logical_not {
     }
 }
 
+mod blocks {
+    use crate::parse;
+
+    #[test]
+    fn empty_block() {
+        insta::assert_debug_snapshot!(parse("{}"));
+    }
+    #[test]
+    fn block_with_one_stmt() {
+        insta::assert_debug_snapshot!(parse(r#"{ print("hi") }"#));
+    }
+    #[test]
+    fn block_with_multiple_stmts() {
+        insta::assert_debug_snapshot!(parse("{ var x = 1\n print(x) }"));
+    }
+    #[test]
+    fn nested_blocks() {
+        insta::assert_debug_snapshot!(parse("{ { var x = 1 } }"));
+    }
+    #[test]
+    fn unclosed_block() {
+        insta::assert_debug_snapshot!(parse("{ var x = 1"));
+    }
+    #[test]
+    fn block_with_blank_lines() {
+        insta::assert_debug_snapshot!(parse("{\n\nvar x = 1\n\n}"));
+    }
+}
+
 mod errors {
     use crate::parse;
 

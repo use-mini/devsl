@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"{ var x = 1\")"
+---
+Err(
+    ParseError {
+        message: "unclosed block: expected `}`, found end of input",
+        span: Span {
+            start: 11,
+            end: 11,
+        },
+    },
+)
