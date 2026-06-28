@@ -349,7 +349,7 @@ fn builtin_int(call: BuiltinCall) -> Result<Option<Value>, EvalError> {
 fn write_value(w: &mut dyn std::io::Write, v: &Value) -> std::io::Result<()> {
     match v {
         Value::Int(int) => write!(w, "{int}"),
-        Value::Float(float) => write!(w, "{float}"),
+        Value::Float(float) => write!(w, "{float:?}"),
         Value::String(string) => w.write_all(string.as_bytes()),
     }
 }
