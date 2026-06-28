@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print(int(3.7))\"#)"
+---
+Ok(
+    "3\n",
+)

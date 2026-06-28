@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print(int(\"123\"))\"#)"
+---
+Ok(
+    "123\n",
+)

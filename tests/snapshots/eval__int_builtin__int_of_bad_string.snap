@@ -1,0 +1,19 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print(int(\"abc\"))\"#)"
+---
+Err(
+    EvalError {
+        category: Type,
+        message: "cannot parse `abc` as int",
+        span: Span {
+            start: 6,
+            end: 16,
+        },
+        cause: Some(
+            ParseIntError {
+                kind: InvalidDigit,
+            },
+        ),
+    },
+)

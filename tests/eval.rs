@@ -42,6 +42,35 @@ mod print {
     }
 }
 
+mod int_builtin {
+    use crate::run;
+
+    #[test]
+    fn int_of_int() {
+        insta::assert_debug_snapshot!(run(r#"print(int(42))"#));
+    }
+    #[test]
+    fn int_of_float_truncates_toward_zero() {
+        insta::assert_debug_snapshot!(run(r#"print(int(3.7))"#));
+    }
+    #[test]
+    fn int_of_negative_float() {
+        insta::assert_debug_snapshot!(run(r#"print(int(0 - 3.7))"#));
+    }
+    #[test]
+    fn int_of_string() {
+        insta::assert_debug_snapshot!(run(r#"print(int("123"))"#));
+    }
+    #[test]
+    fn int_of_bad_string() {
+        insta::assert_debug_snapshot!(run(r#"print(int("abc"))"#));
+    }
+    #[test]
+    fn int_of_float_overflow() {
+        insta::assert_debug_snapshot!(run(r#"print(int(99999999999999999999.0))"#));
+    }
+}
+
 mod string_builtin {
     use crate::run;
 

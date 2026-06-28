@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print(int(42))\"#)"
+---
+Ok(
+    "42\n",
+)
