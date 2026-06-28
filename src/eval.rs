@@ -131,7 +131,22 @@ fn eval_stmt(stmt: &Stmt, ctx: &mut EvalCtx) -> Result<(), EvalError> {
         }
         Stmt::Var { name, value, span } => bind(ctx, name, value, *span, false),
         Stmt::Const { name, value, span } => bind(ctx, name, value, *span, true),
-        _ => todo!(),
+        Stmt::Block { stmts, .. } => {
+            ctx.env.push_scope();
+            let result = (|| {
+                for stmt in stmts {
+                    eval_stmt(stmt, ctx)?;
+                }
+                Ok(())
+            })();
+            ctx.env.pop_scope();
+            result
+        }
+        Stmt::Reassign { span, .. } => Err(EvalError::new(
+            ErrorCategory::Runtime,
+            "reassignment not implemented".into(),
+            *span,
+        )),
     }
 }
 
@@ -934,5 +949,44 @@ mod tests {
             eval_to_value(expr).unwrap_err().category,
             ErrorCategory::Name
         ));
+    }
+
+    fn block_stmt(stmts: Vec<Stmt>) -> Stmt {
+        Stmt::Block {
+            stmts,
+            span: no_span(),
+        }
+    }
+
+    #[test]
+    fn block_runs_inner_stmts() {
+        let stmts = vec![block_stmt(vec![
+            var_stmt("x", Expr::Int(1, no_span())),
+            Stmt::Expr(ident("x")),
+        ])];
+        run_stmts(&stmts).unwrap();
+    }
+
+    #[test]
+    fn block_inner_var_does_not_leak() {
+        let stmts = vec![
+            block_stmt(vec![var_stmt("x", Expr::Int(1, no_span()))]),
+            Stmt::Expr(ident("x")),
+        ];
+        let err = run_stmts(&stmts).unwrap_err();
+        assert!(matches!(err.category, ErrorCategory::Name));
+    }
+
+    #[test]
+    fn block_shadows_outer() {
+        let stmts = vec![
+            var_stmt("x", Expr::Int(1, no_span())),
+            block_stmt(vec![
+                var_stmt("x", Expr::Int(2, no_span())),
+                Stmt::Expr(ident("x")),
+            ]),
+            Stmt::Expr(ident("x")),
+        ];
+        run_stmts(&stmts).unwrap();
     }
 }
