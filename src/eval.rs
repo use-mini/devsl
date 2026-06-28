@@ -87,6 +87,7 @@ fn eval_stmt(stmt: &Stmt, ctx: &mut EvalCtx) -> Result<(), EvalError> {
         }
         Stmt::Var { name, value, span } => bind(ctx, name, value, *span, false),
         Stmt::Const { name, value, span } => bind(ctx, name, value, *span, true),
+        _ => todo!(),
     }
 }
 

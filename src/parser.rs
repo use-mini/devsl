@@ -97,6 +97,10 @@ pub enum Stmt {
         value: Expr,
         span: Span,
     },
+    Block {
+        stmts: Vec<Stmt>,
+        span: Span,
+    },
 }
 
 pub struct Parser {
@@ -158,6 +162,7 @@ impl Parser {
         match self.peek().kind {
             TokenKind::Var => self.parse_binding(true),
             TokenKind::Const => self.parse_binding(false),
+            TokenKind::OCurly => self.parse_block(),
             _ => Ok(Stmt::Expr(self.parse_expr()?)),
         }
     }
@@ -204,6 +209,58 @@ impl Parser {
             Stmt::Var { name, value, span }
         } else {
             Stmt::Const { name, value, span }
+        })
+    }
+
+    fn parse_block(&mut self) -> Result<Stmt, ParseError> {
+        let ocurly_span = self.peek().span;
+        self.advance();
+        let mut stmts = Vec::new();
+        loop {
+            while matches!(self.peek().kind, TokenKind::Newline) {
+                self.advance();
+            }
+            if matches!(self.peek().kind, TokenKind::CCurly) {
+                break;
+            }
+
+            if self.is_at_end() {
+                return Err(ParseError::new(
+                    "unclosed block: expected `}`, found end of input".into(),
+                    self.peek().span,
+                ));
+            }
+            stmts.push(self.parse_stmt()?);
+            match self.peek().kind {
+                TokenKind::Newline | TokenKind::SemiColon => {
+                    self.advance();
+                }
+                TokenKind::CCurly => break,
+                TokenKind::Eof => {
+                    return Err(ParseError::new(
+                        "unclosed block: expected `}`, found end of input".into(),
+                        self.peek().span,
+                    ));
+                }
+                _ => {
+                    return Err(ParseError::new(
+                        format!(
+                            "expected new line, `;` or `}}` after statement, found {:?}",
+                            self.peek().kind
+                        ),
+                        self.peek().span,
+                    ));
+                }
+            }
+        }
+        let ccurly_span = self.peek().span;
+        self.advance();
+        Ok(Stmt::Block {
+            stmts,
+            span: Span {
+                start: ocurly_span.start,
+                end: ccurly_span.end,
+            },
         })
     }
 
