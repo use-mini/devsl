@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"var x = 1\\n{ var x = 2\\n { var x = 3\\n print(x) }\\n print(x) }\\nprint(x)\")"
+---
+Ok(
+    "3\n2\n1\n",
+)

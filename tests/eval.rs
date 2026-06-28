@@ -225,3 +225,46 @@ mod logic {
         insta::assert_debug_snapshot!(run("print(false and nope)"));
     }
 }
+
+mod scoping {
+    use crate::run;
+
+    #[test]
+    fn reassign_int() {
+        insta::assert_debug_snapshot!(run("var x = 1\nx = 2\nprint(x)"));
+    }
+    #[test]
+    fn reassign_across_types() {
+        insta::assert_debug_snapshot!(run("var x = 1\nx = \"hi\"\nprint(x)"));
+    }
+    #[test]
+    fn reassign_unknown_fails() {
+        insta::assert_debug_snapshot!(run("nope = 1"));
+    }
+    #[test]
+    fn reassign_const_fails() {
+        insta::assert_debug_snapshot!(run("const pi = 3.14\npi = 3.0"));
+    }
+    #[test]
+    fn block_shadows_outer() {
+        insta::assert_debug_snapshot!(run("var x = 1\n{ var x = 2\n print(x) }\nprint(x)"));
+    }
+    #[test]
+    fn block_inner_var_does_not_leak() {
+        insta::assert_debug_snapshot!(run("{ var x = 1 }\nprint(x)"));
+    }
+    #[test]
+    fn block_reassign_affects_outer() {
+        insta::assert_debug_snapshot!(run("var x = 1\n{ x = 2 }\nprint(x)"));
+    }
+    #[test]
+    fn nested_blocks_compose() {
+        insta::assert_debug_snapshot!(run(
+            "var x = 1\n{ var x = 2\n { var x = 3\n print(x) }\n print(x) }\nprint(x)"
+        ));
+    }
+    #[test]
+    fn empty_block_is_noop() {
+        insta::assert_debug_snapshot!(run("var x = 1\n{}\nprint(x)"));
+    }
+}

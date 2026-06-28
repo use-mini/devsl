@@ -1,0 +1,15 @@
+---
+source: tests/eval.rs
+expression: "run(\"{ var x = 1 }\\nprint(x)\")"
+---
+Err(
+    EvalError {
+        category: Name,
+        message: "unknown identifier `x`",
+        span: Span {
+            start: 20,
+            end: 21,
+        },
+        cause: None,
+    },
+)

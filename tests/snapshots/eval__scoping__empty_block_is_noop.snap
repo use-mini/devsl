@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"var x = 1\\n{}\\nprint(x)\")"
+---
+Ok(
+    "1\n",
+)

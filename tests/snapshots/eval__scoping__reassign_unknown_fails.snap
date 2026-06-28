@@ -1,0 +1,15 @@
+---
+source: tests/eval.rs
+expression: "run(\"nope = 1\")"
+---
+Err(
+    EvalError {
+        category: Name,
+        message: "unknown identifier `nope`",
+        span: Span {
+            start: 0,
+            end: 8,
+        },
+        cause: None,
+    },
+)
