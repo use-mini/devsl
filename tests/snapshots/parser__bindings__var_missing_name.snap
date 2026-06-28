@@ -1,10 +1,10 @@
 ---
 source: tests/parser.rs
-expression: "parse(\"a() b()\")"
+expression: "parse(\"var = 5\")"
 ---
 Err(
     ParseError {
-        message: "expected new line or `;` after statement, found Identifier(\"b\")",
+        message: "expected identifier after `var`, found Eq",
         span: Span {
             start: 4,
             end: 5,

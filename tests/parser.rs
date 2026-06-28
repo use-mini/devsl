@@ -147,6 +147,43 @@ mod arithmetic {
     }
 }
 
+mod bindings {
+    use crate::parse;
+
+    #[test]
+    fn var_simple() {
+        insta::assert_debug_snapshot!(parse("var x = 5"));
+    }
+    #[test]
+    fn var_expression() {
+        insta::assert_debug_snapshot!(parse("var x = 2 + 3"));
+    }
+    #[test]
+    fn var_string() {
+        insta::assert_debug_snapshot!(parse(r#"var name = "alice""#));
+    }
+    #[test]
+    fn const_simple() {
+        insta::assert_debug_snapshot!(parse("const pi = 3.14"));
+    }
+    #[test]
+    fn var_then_use() {
+        insta::assert_debug_snapshot!(parse("var x = 1\nprint(x)"));
+    }
+    #[test]
+    fn var_missing_equals() {
+        insta::assert_debug_snapshot!(parse("var x 5"));
+    }
+    #[test]
+    fn var_missing_name() {
+        insta::assert_debug_snapshot!(parse("var = 5"));
+    }
+    #[test]
+    fn var_missing_value() {
+        insta::assert_debug_snapshot!(parse("var x ="));
+    }
+}
+
 mod errors {
     use crate::parse;
 

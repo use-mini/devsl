@@ -1,0 +1,22 @@
+---
+source: tests/parser.rs
+expression: "parse(r#\"var name = \"alice\"\"#)"
+---
+Ok(
+    [
+        Var {
+            name: "name",
+            value: String(
+                "alice",
+                Span {
+                    start: 11,
+                    end: 18,
+                },
+            ),
+            span: Span {
+                start: 0,
+                end: 18,
+            },
+        },
+    ],
+)

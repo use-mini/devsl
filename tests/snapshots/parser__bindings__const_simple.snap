@@ -1,0 +1,22 @@
+---
+source: tests/parser.rs
+expression: "parse(\"const pi = 3.14\")"
+---
+Ok(
+    [
+        Const {
+            name: "pi",
+            value: Float(
+                3.14,
+                Span {
+                    start: 11,
+                    end: 15,
+                },
+            ),
+            span: Span {
+                start: 0,
+                end: 15,
+            },
+        },
+    ],
+)

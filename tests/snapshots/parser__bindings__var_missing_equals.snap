@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"var x 5\")"
+---
+Err(
+    ParseError {
+        message: "expected `=` after binding name, found Int(5)",
+        span: Span {
+            start: 6,
+            end: 7,
+        },
+    },
+)
