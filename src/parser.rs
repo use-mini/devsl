@@ -18,6 +18,13 @@ pub enum BinOp {
     Sub,
     Mul,
     Div,
+
+    Eq,
+    NotEq,
+    Lt,
+    Gt,
+    LtEq,
+    GtEq,
 }
 
 #[derive(Debug)]
@@ -192,7 +199,45 @@ impl Parser {
     }
 
     fn parse_expr(&mut self) -> Result<Expr, ParseError> {
-        self.parse_additive()
+        self.parse_comparison()
+    }
+    fn parse_comparison(&mut self) -> Result<Expr, ParseError> {
+        let lhs = self.parse_additive()?;
+        let op = match self.peek().kind {
+            TokenKind::Lt => BinOp::Lt,
+            TokenKind::Gt => BinOp::Gt,
+            TokenKind::LtEq => BinOp::LtEq,
+            TokenKind::GtEq => BinOp::GtEq,
+            TokenKind::EqEq => BinOp::Eq,
+            TokenKind::BangEq => BinOp::NotEq,
+            _ => return Ok(lhs),
+        };
+        self.advance();
+        let rhs = self.parse_additive()?;
+        if matches!(
+            self.peek().kind,
+            TokenKind::Lt
+                | TokenKind::Gt
+                | TokenKind::LtEq
+                | TokenKind::GtEq
+                | TokenKind::EqEq
+                | TokenKind::BangEq,
+        ) {
+            return Err(ParseError::new(
+                "chained comparison is not allowed; use `and` to combine".into(),
+                self.peek().span,
+            ));
+        }
+        let span = Span {
+            start: lhs.span().start,
+            end: rhs.span().end,
+        };
+        Ok(Expr::Binary {
+            op,
+            lhs: Box::new(lhs),
+            rhs: Box::new(rhs),
+            span,
+        })
     }
 
     fn parse_additive(&mut self) -> Result<Expr, ParseError> {
