@@ -13,11 +13,25 @@ impl ParseError {
 }
 
 #[derive(Debug)]
+pub enum BinOp {
+    Add,
+    Sub,
+    Mul,
+    Div,
+}
+
+#[derive(Debug)]
 pub enum Expr {
     String(String, Span),
     Identifier(String, Span),
     Int(i64, Span),
     Float(f64, Span),
+    Binary {
+        op: BinOp,
+        lhs: Box<Expr>,
+        rhs: Box<Expr>,
+        span: Span,
+    },
     Call {
         callee: Box<Expr>,
         args: Vec<Expr>,
@@ -32,7 +46,18 @@ impl Expr {
             Expr::Identifier(_, span) => *span,
             Expr::Int(_, span) => *span,
             Expr::Float(_, span) => *span,
+            Expr::Binary { span, .. } => *span,
             Expr::Call { span, .. } => *span,
+        }
+    }
+    pub fn with_span(self, span: Span) -> Expr {
+        match self {
+            Expr::String(string, _) => Expr::String(string, span),
+            Expr::Identifier(identifier, _) => Expr::Identifier(identifier, span),
+            Expr::Int(int, _) => Expr::Int(int, span),
+            Expr::Float(float, _) => Expr::Float(float, span),
+            Expr::Binary { op, lhs, rhs, .. } => Expr::Binary { op, lhs, rhs, span },
+            Expr::Call { callee, args, .. } => Expr::Call { callee, args, span },
         }
     }
 }
@@ -98,12 +123,85 @@ impl Parser {
     }
 
     fn parse_expr(&mut self) -> Result<Expr, ParseError> {
+        self.parse_additive()
+    }
+
+    fn parse_additive(&mut self) -> Result<Expr, ParseError> {
+        let mut lhs = self.parse_multiplicative()?;
+
+        loop {
+            let op = match self.peek().kind {
+                TokenKind::Plus => BinOp::Add,
+                TokenKind::Minus => BinOp::Sub,
+                _ => break,
+            };
+            self.advance();
+            let rhs = self.parse_multiplicative()?;
+            let span = Span {
+                start: lhs.span().start,
+                end: rhs.span().end,
+            };
+            lhs = Expr::Binary {
+                op,
+                lhs: Box::new(lhs),
+                rhs: Box::new(rhs),
+                span,
+            };
+        }
+        Ok(lhs)
+    }
+
+    fn parse_multiplicative(&mut self) -> Result<Expr, ParseError> {
+        let mut lhs = self.parse_primary()?;
+
+        loop {
+            let op = match self.peek().kind {
+                TokenKind::Star => BinOp::Mul,
+                TokenKind::Slash => BinOp::Div,
+                _ => break,
+            };
+            self.advance();
+            let rhs = self.parse_primary()?;
+            let span = Span {
+                start: lhs.span().start,
+                end: rhs.span().end,
+            };
+            lhs = Expr::Binary {
+                op,
+                lhs: Box::new(lhs),
+                rhs: Box::new(rhs),
+                span,
+            };
+        }
+        Ok(lhs)
+    }
+
+    fn parse_primary(&mut self) -> Result<Expr, ParseError> {
         if self.is_at_end() {
             return Err(ParseError::new(
                 "unexpected end of input".into(),
                 self.peek().span,
             ));
         }
+
+        if matches!(self.peek().kind, TokenKind::OParen) {
+            let oparen_span = self.peek().span;
+            self.advance();
+            let inner = self.parse_expr()?;
+            if !matches!(self.peek().kind, TokenKind::CParen) {
+                return Err(ParseError::new(
+                    format!("expected `)`, found {:?}", self.peek().kind),
+                    self.peek().span,
+                ));
+            }
+            let cparen_span = self.peek().span;
+            self.advance();
+            return Ok(inner.with_span(Span {
+                start: oparen_span.start,
+                end: cparen_span.end,
+            }));
+        }
+
         let token = self.peek().clone();
         self.advance();
         match token.kind {
