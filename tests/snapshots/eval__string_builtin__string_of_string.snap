@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print(string(\"hi\"))\"#)"
+---
+Ok(
+    "hi\n",
+)

@@ -41,3 +41,28 @@ mod print {
         insta::assert_debug_snapshot!(run("print(\"first\")\nprint(\"second\")"));
     }
 }
+
+mod string_builtin {
+    use crate::run;
+
+    #[test]
+    fn string_of_int() {
+        insta::assert_debug_snapshot!(run(r#"print(string(42))"#));
+    }
+    #[test]
+    fn string_of_float() {
+        insta::assert_debug_snapshot!(run(r#"print(string(3.14))"#));
+    }
+    #[test]
+    fn string_of_string() {
+        insta::assert_debug_snapshot!(run(r#"print(string("hi"))"#));
+    }
+    #[test]
+    fn string_wrong_arity_zero() {
+        insta::assert_debug_snapshot!(run(r#"print(string())"#));
+    }
+    #[test]
+    fn string_wrong_arity_two() {
+        insta::assert_debug_snapshot!(run(r#"print(string(1, 2))"#));
+    }
+}
