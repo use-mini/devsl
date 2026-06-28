@@ -8,6 +8,8 @@ enum Value {
     String(String),
     Int(i64),
     Float(f64),
+    Bool(bool),
+    Null,
 }
 
 #[derive(Debug, Clone)]
@@ -101,6 +103,66 @@ fn eval_expr(expr: &Expr, ctx: &mut EvalCtx) -> Result<Option<Value>, EvalError>
                 *span,
             )),
         },
+        Expr::Binary {
+            op: BinOp::And,
+            lhs,
+            rhs,
+            ..
+        } => {
+            let l = require_value(eval_expr(lhs, ctx)?, lhs.span())?;
+            match l {
+                Value::Bool(false) => {
+                    check_names(rhs, ctx)?;
+                    Ok(Some(Value::Bool(false)))
+                }
+                Value::Bool(true) => {
+                    let r = require_value(eval_expr(rhs, ctx)?, rhs.span())?;
+                    match r {
+                        Value::Bool(b) => Ok(Some(Value::Bool(b))),
+                        other => Err(EvalError::new(
+                            ErrorCategory::Type,
+                            format!("`and` requires Bool, got {other:?}"),
+                            rhs.span(),
+                        )),
+                    }
+                }
+                other => Err(EvalError::new(
+                    ErrorCategory::Type,
+                    format!("`and` requires Bool, got {other:?}"),
+                    lhs.span(),
+                )),
+            }
+        }
+        Expr::Binary {
+            op: BinOp::Or,
+            lhs,
+            rhs,
+            ..
+        } => {
+            let l = require_value(eval_expr(lhs, ctx)?, lhs.span())?;
+            match l {
+                Value::Bool(true) => {
+                    check_names(rhs, ctx)?;
+                    Ok(Some(Value::Bool(true)))
+                }
+                Value::Bool(false) => {
+                    let r = require_value(eval_expr(rhs, ctx)?, rhs.span())?;
+                    match r {
+                        Value::Bool(b) => Ok(Some(Value::Bool(b))),
+                        other => Err(EvalError::new(
+                            ErrorCategory::Type,
+                            format!("`or` requires Bool, got {other:?}"),
+                            rhs.span(),
+                        )),
+                    }
+                }
+                other => Err(EvalError::new(
+                    ErrorCategory::Type,
+                    format!("`or` requires Bool, got {other:?}"),
+                    lhs.span(),
+                )),
+            }
+        }
         Expr::Binary { op, lhs, rhs, span } => {
             let l = require_value(eval_expr(lhs, ctx)?, lhs.span())?;
             let r = require_value(eval_expr(rhs, ctx)?, rhs.span())?;
@@ -143,7 +205,51 @@ fn eval_expr(expr: &Expr, ctx: &mut EvalCtx) -> Result<Option<Value>, EvalError>
                 span: *span,
             })
         }
-        _ => todo!(),
+        Expr::Bool(b, _) => Ok(Some(Value::Bool(*b))),
+        Expr::Null(_) => Ok(Some(Value::Null)),
+        Expr::Not { inner, span } => {
+            let v = require_value(eval_expr(inner, ctx)?, inner.span())?;
+            match v {
+                Value::Bool(b) => Ok(Some(Value::Bool(!b))),
+                other => Err(EvalError::new(
+                    ErrorCategory::Type,
+                    format!("`not` requires Bool, got {other:?}"),
+                    *span,
+                )),
+            }
+        }
+    }
+}
+
+fn check_names(expr: &Expr, ctx: &EvalCtx) -> Result<(), EvalError> {
+    match expr {
+        Expr::Identifier(identifier, span) => {
+            if ctx.env.lookup(identifier).is_none() && !builtin_is_name(identifier) {
+                return Err(EvalError::new(
+                    ErrorCategory::Name,
+                    format!("unknown identifier `{identifier}`"),
+                    *span,
+                ));
+            }
+            Ok(())
+        }
+        Expr::Call { callee, args, .. } => {
+            check_names(callee, ctx)?;
+            for a in args {
+                check_names(a, ctx)?;
+            }
+            Ok(())
+        }
+        Expr::Binary { lhs, rhs, .. } => {
+            check_names(lhs, ctx)?;
+            check_names(rhs, ctx)
+        }
+        Expr::Not { inner, .. } => check_names(inner, ctx),
+        Expr::Int(_, _)
+        | Expr::Float(_, _)
+        | Expr::String(_, _)
+        | Expr::Bool(_, _)
+        | Expr::Null(_) => Ok(()),
     }
 }
 
@@ -183,10 +289,39 @@ fn eval_binary(op: BinOp, lhs: Value, rhs: Value, span: Span) -> Result<Value, E
         (Mul, Float(a), Float(b)) => Ok(Float(a * b)),
         (Div, Float(a), Float(b)) => Ok(Float(a / b)),
 
+        (Add, String(a), String(b)) => Ok(String(a + &b)),
+
+        (Eq, Int(a), Int(b)) => Ok(Bool(a == b)),
+        (Eq, Float(a), Float(b)) => Ok(Bool(a == b)),
+        (Eq, String(a), String(b)) => Ok(Bool(a == b)),
+        (Eq, Bool(a), Bool(b)) => Ok(Bool(a == b)),
+        (Eq, Null, Null) => Ok(Bool(true)),
+
+        (NotEq, l, r) => match eval_binary(BinOp::Eq, l, r, span)? {
+            Bool(b) => Ok(Bool(!b)),
+            _ => unreachable!("Eq returns Bool"),
+        },
+
+        (Lt, Int(a), Int(b)) => Ok(Bool(a < b)),
+        (Lt, Float(a), Float(b)) => Ok(Bool(a < b)),
+        (Lt, String(a), String(b)) => Ok(Bool(a < b)),
+
+        (LtEq, Int(a), Int(b)) => Ok(Bool(a <= b)),
+        (LtEq, Float(a), Float(b)) => Ok(Bool(a <= b)),
+        (LtEq, String(a), String(b)) => Ok(Bool(a <= b)),
+
+        (Gt, Int(a), Int(b)) => Ok(Bool(a > b)),
+        (Gt, Float(a), Float(b)) => Ok(Bool(a > b)),
+        (Gt, String(a), String(b)) => Ok(Bool(a > b)),
+
+        (GtEq, Int(a), Int(b)) => Ok(Bool(a >= b)),
+        (GtEq, Float(a), Float(b)) => Ok(Bool(a >= b)),
+        (GtEq, String(a), String(b)) => Ok(Bool(a >= b)),
+
         (op, Int(a), Float(b)) => eval_binary(op, Float(a as f64), Float(b), span),
         (op, Float(a), Int(b)) => eval_binary(op, Float(a), Float(b as f64), span),
 
-        (Add, String(a), String(b)) => Ok(String(a + &b)),
+        (Eq, _, _) => Ok(Bool(false)),
 
         (op, l, r) => Err(EvalError::new(
             ErrorCategory::Type,
@@ -350,6 +485,13 @@ fn builtin_int(call: BuiltinCall) -> Result<Option<Value>, EvalError> {
                 Box::new(e),
             )
         })?,
+        other => {
+            return Err(EvalError::new(
+                ErrorCategory::Type,
+                format!("`int` does not accept {other:?}"),
+                call.span,
+            ));
+        }
     };
     Ok(Some(Value::Int(int)))
 }
@@ -374,6 +516,13 @@ fn builtin_float(call: BuiltinCall) -> Result<Option<Value>, EvalError> {
                 Box::new(e),
             )
         })?,
+        other => {
+            return Err(EvalError::new(
+                ErrorCategory::Type,
+                format!("`float` does not accept {other:?}"),
+                call.span,
+            ));
+        }
     };
     Ok(Some(Value::Float(float)))
 }
@@ -403,6 +552,13 @@ fn builtin_number(call: BuiltinCall) -> Result<Option<Value>, EvalError> {
                 ));
             }
         }
+        other => {
+            return Err(EvalError::new(
+                ErrorCategory::Type,
+                format!("`number` does not accept {other:?}"),
+                call.span,
+            ));
+        }
     };
     Ok(Some(number))
 }
@@ -412,6 +568,8 @@ fn write_value(w: &mut dyn std::io::Write, v: &Value) -> std::io::Result<()> {
         Value::Int(int) => write!(w, "{int}"),
         Value::Float(float) => write!(w, "{float:?}"),
         Value::String(string) => w.write_all(string.as_bytes()),
+        Value::Bool(bool) => write!(w, "{bool}"),
+        Value::Null => w.write_all(b"null"),
     }
 }
 
@@ -625,5 +783,111 @@ mod tests {
         })];
         let err = run_stmts(&stmts).unwrap_err();
         assert!(matches!(err.category, ErrorCategory::Name));
+    }
+
+    #[test]
+    fn eval_bool_literal() {
+        let expr = Expr::Bool(true, no_span());
+        assert!(matches!(eval_to_value(expr), Ok(Value::Bool(true))));
+    }
+
+    #[test]
+    fn eval_null_literal() {
+        let expr = Expr::Null(no_span());
+        assert!(matches!(eval_to_value(expr), Ok(Value::Null)));
+    }
+
+    #[test]
+    fn eval_not_true_is_false() {
+        let expr = Expr::Not {
+            inner: Box::new(Expr::Bool(true, no_span())),
+            span: no_span(),
+        };
+        assert!(matches!(eval_to_value(expr), Ok(Value::Bool(false))));
+    }
+
+    #[test]
+    fn eval_not_non_bool_is_type_error() {
+        let expr = Expr::Not {
+            inner: Box::new(Expr::Int(1, no_span())),
+            span: no_span(),
+        };
+        assert!(matches!(
+            eval_to_value(expr).unwrap_err().category,
+            ErrorCategory::Type
+        ));
+    }
+
+    #[test]
+    fn lt_int_int() {
+        let expr = bin(BinOp::Lt, Expr::Int(1, no_span()), Expr::Int(2, no_span()));
+        assert!(matches!(eval_to_value(expr), Ok(Value::Bool(true))));
+    }
+
+    #[test]
+    fn eq_null_null() {
+        let expr = bin(BinOp::Eq, Expr::Null(no_span()), Expr::Null(no_span()));
+        assert!(matches!(eval_to_value(expr), Ok(Value::Bool(true))));
+    }
+
+    #[test]
+    fn eq_cross_kind_is_false() {
+        let expr = bin(
+            BinOp::Eq,
+            Expr::Int(1, no_span()),
+            Expr::String("1".into(), no_span()),
+        );
+        assert!(matches!(eval_to_value(expr), Ok(Value::Bool(false))));
+    }
+
+    #[test]
+    fn lt_null_is_type_error() {
+        let expr = bin(BinOp::Lt, Expr::Null(no_span()), Expr::Int(1, no_span()));
+        assert!(matches!(
+            eval_to_value(expr).unwrap_err().category,
+            ErrorCategory::Type
+        ));
+    }
+
+    #[test]
+    fn and_bool_bool() {
+        let expr = bin(
+            BinOp::And,
+            Expr::Bool(true, no_span()),
+            Expr::Bool(false, no_span()),
+        );
+        assert!(matches!(eval_to_value(expr), Ok(Value::Bool(false))));
+    }
+
+    #[test]
+    fn and_non_bool_rhs_is_type_error() {
+        let expr = bin(
+            BinOp::And,
+            Expr::Bool(true, no_span()),
+            Expr::Int(1, no_span()),
+        );
+        assert!(matches!(
+            eval_to_value(expr).unwrap_err().category,
+            ErrorCategory::Type
+        ));
+    }
+
+    #[test]
+    fn or_short_circuits_skips_rhs_eval() {
+        let expr = bin(
+            BinOp::Or,
+            Expr::Bool(true, no_span()),
+            Expr::Int(1, no_span()),
+        );
+        assert!(matches!(eval_to_value(expr), Ok(Value::Bool(true))));
+    }
+
+    #[test]
+    fn or_short_circuit_still_checks_names_in_rhs() {
+        let expr = bin(BinOp::Or, Expr::Bool(true, no_span()), ident("nope"));
+        assert!(matches!(
+            eval_to_value(expr).unwrap_err().category,
+            ErrorCategory::Name
+        ));
     }
 }
