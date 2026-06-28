@@ -47,6 +47,13 @@ fn bind(
     span: Span,
     is_const: bool,
 ) -> Result<(), EvalError> {
+    if builtin_is_name(name) {
+        return Err(EvalError::new(
+            ErrorCategory::Name,
+            format!("cannot shadow builtin `{name}`"),
+            span,
+        ));
+    }
     let v = match eval_expr(value, ctx)? {
         Some(v) => v,
         None => {
@@ -99,11 +106,40 @@ fn eval_expr(expr: &Expr, ctx: &mut EvalCtx) -> Result<Option<Value>, EvalError>
             let r = require_value(eval_expr(rhs, ctx)?, rhs.span())?;
             eval_binary(*op, l, r, *span).map(Some)
         }
-        Expr::Call { span, .. } => Err(EvalError::new(
-            ErrorCategory::Runtime,
-            "expression kind not implemented".into(),
-            *span,
-        )),
+        Expr::Call { callee, args, span } => {
+            let name = match callee.as_ref() {
+                Expr::Identifier(identifier, _) => identifier,
+                _ => {
+                    return Err(EvalError::new(
+                        ErrorCategory::Type,
+                        "callee must be an identifier".into(),
+                        callee.span(),
+                    ));
+                }
+            };
+            if ctx.env.lookup(name).is_some() {
+                return Err(EvalError::new(
+                    ErrorCategory::Type,
+                    format!("`{name}` is a value, not callable"),
+                    callee.span(),
+                ));
+            }
+            let builtin = builtin_lookup(name).ok_or_else(|| {
+                EvalError::new(
+                    ErrorCategory::Name,
+                    format!("unknown identifier `{name}`"),
+                    callee.span(),
+                )
+            })?;
+
+            let mut arg_values = Vec::with_capacity(args.len());
+            for a in args {
+                let v = require_value(eval_expr(a, ctx)?, a.span())?;
+                arg_values.push(v);
+            }
+
+            (builtin.func)(ctx, &arg_values, *span)
+        }
     }
 }
 
@@ -180,6 +216,21 @@ impl EvalError {
             cause: None,
         }
     }
+}
+
+struct Builtin {
+    name: &'static str,
+    func: fn(&mut EvalCtx, &[Value], Span) -> Result<Option<Value>, EvalError>,
+}
+
+const BUILTINS: &[Builtin] = &[];
+
+fn builtin_lookup(name: &str) -> Option<&'static Builtin> {
+    BUILTINS.iter().find(|b| b.name == name)
+}
+
+fn builtin_is_name(name: &str) -> bool {
+    BUILTINS.iter().any(|b| b.name == name)
 }
 
 #[cfg(test)]
@@ -372,5 +423,16 @@ mod tests {
         let expr = bin(BinOp::Div, Expr::Int(1, no_span()), Expr::Int(0, no_span()));
         let err = eval_to_value(expr).unwrap_err();
         assert!(matches!(err.category, ErrorCategory::Runtime));
+    }
+
+    #[test]
+    fn call_unknown_callee_is_name_error() {
+        let stmts = vec![Stmt::Expr(Expr::Call {
+            callee: Box::new(ident("nope")),
+            args: vec![],
+            span: no_span(),
+        })];
+        let err = run_stmts(&stmts).unwrap_err();
+        assert!(matches!(err.category, ErrorCategory::Name));
     }
 }
