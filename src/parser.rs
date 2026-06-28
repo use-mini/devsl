@@ -25,6 +25,9 @@ pub enum BinOp {
     Gt,
     LtEq,
     GtEq,
+
+    Or,
+    And,
 }
 
 #[derive(Debug)]
@@ -199,8 +202,48 @@ impl Parser {
     }
 
     fn parse_expr(&mut self) -> Result<Expr, ParseError> {
-        self.parse_comparison()
+        self.parse_or()
     }
+
+    fn parse_or(&mut self) -> Result<Expr, ParseError> {
+        let mut lhs = self.parse_and()?;
+
+        while matches!(self.peek().kind, TokenKind::Or) {
+            self.advance();
+            let rhs = self.parse_and()?;
+            let span = Span {
+                start: lhs.span().start,
+                end: rhs.span().end,
+            };
+            lhs = Expr::Binary {
+                op: BinOp::Or,
+                lhs: Box::new(lhs),
+                rhs: Box::new(rhs),
+                span,
+            };
+        }
+        Ok(lhs)
+    }
+
+    fn parse_and(&mut self) -> Result<Expr, ParseError> {
+        let mut lhs = self.parse_comparison()?;
+        while matches!(self.peek().kind, TokenKind::And) {
+            self.advance();
+            let rhs = self.parse_comparison()?;
+            let span = Span {
+                start: lhs.span().start,
+                end: rhs.span().end,
+            };
+            lhs = Expr::Binary {
+                op: BinOp::And,
+                lhs: Box::new(lhs),
+                rhs: Box::new(rhs),
+                span,
+            };
+        }
+        Ok(lhs)
+    }
+
     fn parse_comparison(&mut self) -> Result<Expr, ParseError> {
         let lhs = self.parse_additive()?;
         let op = match self.peek().kind {
