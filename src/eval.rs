@@ -18,22 +18,66 @@ struct Binding {
     is_const: bool,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
+enum ReassignError {
+    Unknown,
+    Const,
+}
+
+#[derive(Debug)]
 pub struct Env {
-    values: HashMap<String, Binding>,
+    scopes: Vec<HashMap<String, Binding>>,
 }
 
 impl Env {
     pub fn new() -> Env {
-        Env::default()
+        let mut scopes = Vec::new();
+        scopes.push(HashMap::new());
+        Env { scopes }
+    }
+
+    fn push_scope(&mut self) {
+        self.scopes.push(HashMap::new());
+    }
+
+    fn pop_scope(&mut self) {
+        if self.scopes.len() != 1 {
+            self.scopes.pop();
+        }
     }
 
     fn define(&mut self, name: String, value: Value, is_const: bool) {
-        self.values.insert(name, Binding { value, is_const });
+        let top = self.scopes.last_mut().expect("env always has root scope");
+        top.insert(name, Binding { value, is_const });
+    }
+
+    fn reassign(&mut self, name: &str, value: Value) -> Result<(), ReassignError> {
+        for scope in self.scopes.iter_mut().rev() {
+            if let Some(v) = scope.get_mut(name) {
+                if v.is_const {
+                    return Err(ReassignError::Const);
+                } else {
+                    v.value = value;
+                    return Ok(());
+                }
+            }
+        }
+        Err(ReassignError::Unknown)
     }
 
     fn lookup(&self, name: &str) -> Option<&Value> {
-        self.values.get(name).map(|b| &b.value)
+        for scope in self.scopes.iter().rev() {
+            if let Some(v) = scope.get(name) {
+                return Some(&v.value);
+            }
+        }
+        None
+    }
+}
+
+impl Default for Env {
+    fn default() -> Env {
+        Env::new()
     }
 }
 
