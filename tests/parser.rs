@@ -237,6 +237,28 @@ mod comparisons {
         insta::assert_debug_snapshot!(parse("1 < 2 < 3"));
     }
 }
+
+mod logical_binary {
+    use crate::parse;
+
+    #[test]
+    fn and_basic() {
+        insta::assert_debug_snapshot!(parse("true and false"));
+    }
+    #[test]
+    fn or_basic() {
+        insta::assert_debug_snapshot!(parse("true or false"));
+    }
+    #[test]
+    fn and_binds_tighter_than_or() {
+        insta::assert_debug_snapshot!(parse("true or false and true"));
+    }
+    #[test]
+    fn comparison_in_logical() {
+        insta::assert_debug_snapshot!(parse("1 < 2 and 3 == 3"));
+    }
+}
+
 mod errors {
     use crate::parse;
 

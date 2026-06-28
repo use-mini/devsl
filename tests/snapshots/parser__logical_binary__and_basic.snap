@@ -1,0 +1,31 @@
+---
+source: tests/parser.rs
+expression: "parse(\"true and false\")"
+---
+Ok(
+    [
+        Expr(
+            Binary {
+                op: And,
+                lhs: Bool(
+                    true,
+                    Span {
+                        start: 0,
+                        end: 4,
+                    },
+                ),
+                rhs: Bool(
+                    false,
+                    Span {
+                        start: 9,
+                        end: 14,
+                    },
+                ),
+                span: Span {
+                    start: 0,
+                    end: 14,
+                },
+            },
+        ),
+    ],
+)
