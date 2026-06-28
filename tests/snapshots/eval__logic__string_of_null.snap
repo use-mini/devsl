@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"print(string(null))\")"
+---
+Ok(
+    "null\n",
+)

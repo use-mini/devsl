@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print(true or print(\"rhs\"))\"#)"
+---
+Ok(
+    "true\n",
+)

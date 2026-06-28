@@ -180,3 +180,48 @@ mod string_builtin {
         insta::assert_debug_snapshot!(run(r#"print(string(1, 2))"#));
     }
 }
+
+mod logic {
+    use crate::run;
+
+    #[test]
+    fn print_true() {
+        insta::assert_debug_snapshot!(run("print(true)"));
+    }
+    #[test]
+    fn print_false() {
+        insta::assert_debug_snapshot!(run("print(false)"));
+    }
+    #[test]
+    fn print_null() {
+        insta::assert_debug_snapshot!(run("print(null)"));
+    }
+    #[test]
+    fn comparison_in_print() {
+        insta::assert_debug_snapshot!(run("print(1 < 2)"));
+    }
+    #[test]
+    fn and_or_precedence() {
+        insta::assert_debug_snapshot!(run("print(true or false and false)"));
+    }
+    #[test]
+    fn not_then_and() {
+        insta::assert_debug_snapshot!(run("print(not false and true)"));
+    }
+    #[test]
+    fn string_of_bool() {
+        insta::assert_debug_snapshot!(run("print(string(true))"));
+    }
+    #[test]
+    fn string_of_null() {
+        insta::assert_debug_snapshot!(run("print(string(null))"));
+    }
+    #[test]
+    fn or_short_circuit_with_skipped_call() {
+        insta::assert_debug_snapshot!(run(r#"print(true or print("rhs"))"#));
+    }
+    #[test]
+    fn and_short_circuit_catches_skipped_name_error() {
+        insta::assert_debug_snapshot!(run("print(false and nope)"));
+    }
+}

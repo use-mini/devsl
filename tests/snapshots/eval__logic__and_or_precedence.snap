@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"print(true or false and false)\")"
+---
+Ok(
+    "true\n",
+)
