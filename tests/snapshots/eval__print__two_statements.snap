@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"print(\\\"first\\\")\\nprint(\\\"second\\\")\")"
+---
+Ok(
+    "first\nsecond\n",
+)

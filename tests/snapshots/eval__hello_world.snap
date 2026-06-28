@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print(\"Hello, World!\")\"#)"
+---
+Ok(
+    "Hello, World!\n",
+)
