@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print(number(3.14))\"#)"
+---
+Ok(
+    "3.14\n",
+)

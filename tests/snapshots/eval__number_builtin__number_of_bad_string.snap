@@ -1,0 +1,15 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print(number(\"abc\"))\"#)"
+---
+Err(
+    EvalError {
+        category: Type,
+        message: "cannot parse `abc` as number",
+        span: Span {
+            start: 6,
+            end: 19,
+        },
+        cause: None,
+    },
+)

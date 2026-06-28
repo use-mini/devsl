@@ -92,6 +92,31 @@ mod float_builtin {
     }
 }
 
+mod number_builtin {
+    use crate::run;
+
+    #[test]
+    fn number_of_int() {
+        insta::assert_debug_snapshot!(run(r#"print(number(42))"#));
+    }
+    #[test]
+    fn number_of_float() {
+        insta::assert_debug_snapshot!(run(r#"print(number(3.14))"#));
+    }
+    #[test]
+    fn number_of_int_string() {
+        insta::assert_debug_snapshot!(run(r#"print(number("42"))"#));
+    }
+    #[test]
+    fn number_of_float_string() {
+        insta::assert_debug_snapshot!(run(r#"print(number("3.14"))"#));
+    }
+    #[test]
+    fn number_of_bad_string() {
+        insta::assert_debug_snapshot!(run(r#"print(number("abc"))"#));
+    }
+}
+
 mod string_builtin {
     use crate::run;
 
