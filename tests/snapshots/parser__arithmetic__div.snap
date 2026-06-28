@@ -1,0 +1,31 @@
+---
+source: tests/parser.rs
+expression: "parse(\"10 / 2\")"
+---
+Ok(
+    [
+        Expr(
+            Binary {
+                op: Div,
+                lhs: Int(
+                    10,
+                    Span {
+                        start: 0,
+                        end: 2,
+                    },
+                ),
+                rhs: Int(
+                    2,
+                    Span {
+                        start: 5,
+                        end: 6,
+                    },
+                ),
+                span: Span {
+                    start: 0,
+                    end: 6,
+                },
+            },
+        ),
+    ],
+)

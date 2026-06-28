@@ -102,6 +102,51 @@ mod numbers {
     }
 }
 
+mod arithmetic {
+    use crate::parse;
+
+    #[test]
+    fn add() {
+        insta::assert_debug_snapshot!(parse("1 + 2"));
+    }
+    #[test]
+    fn sub() {
+        insta::assert_debug_snapshot!(parse("5 - 3"));
+    }
+    #[test]
+    fn mul() {
+        insta::assert_debug_snapshot!(parse("4 * 6"));
+    }
+    #[test]
+    fn div() {
+        insta::assert_debug_snapshot!(parse("10 / 2"));
+    }
+    #[test]
+    fn precedence_mul_over_add() {
+        insta::assert_debug_snapshot!(parse("1 + 2 * 3"));
+    }
+    #[test]
+    fn left_assoc_add() {
+        insta::assert_debug_snapshot!(parse("1 + 2 + 3"));
+    }
+    #[test]
+    fn left_assoc_div() {
+        insta::assert_debug_snapshot!(parse("8 / 4 / 2"));
+    }
+    #[test]
+    fn parens_grouping() {
+        insta::assert_debug_snapshot!(parse("(1 + 2) * 3"));
+    }
+    #[test]
+    fn mixed_with_floats() {
+        insta::assert_debug_snapshot!(parse("1.5 + 2"));
+    }
+    #[test]
+    fn call_in_expr() {
+        insta::assert_debug_snapshot!(parse("f(1) + 2"));
+    }
+}
+
 mod errors {
     use crate::parse;
 

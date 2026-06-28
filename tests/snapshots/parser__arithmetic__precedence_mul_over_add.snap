@@ -1,0 +1,45 @@
+---
+source: tests/parser.rs
+expression: "parse(\"1 + 2 * 3\")"
+---
+Ok(
+    [
+        Expr(
+            Binary {
+                op: Add,
+                lhs: Int(
+                    1,
+                    Span {
+                        start: 0,
+                        end: 1,
+                    },
+                ),
+                rhs: Binary {
+                    op: Mul,
+                    lhs: Int(
+                        2,
+                        Span {
+                            start: 4,
+                            end: 5,
+                        },
+                    ),
+                    rhs: Int(
+                        3,
+                        Span {
+                            start: 8,
+                            end: 9,
+                        },
+                    ),
+                    span: Span {
+                        start: 4,
+                        end: 9,
+                    },
+                },
+                span: Span {
+                    start: 0,
+                    end: 9,
+                },
+            },
+        ),
+    ],
+)

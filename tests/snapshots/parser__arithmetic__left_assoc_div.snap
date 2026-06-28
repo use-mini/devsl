@@ -1,0 +1,45 @@
+---
+source: tests/parser.rs
+expression: "parse(\"8 / 4 / 2\")"
+---
+Ok(
+    [
+        Expr(
+            Binary {
+                op: Div,
+                lhs: Binary {
+                    op: Div,
+                    lhs: Int(
+                        8,
+                        Span {
+                            start: 0,
+                            end: 1,
+                        },
+                    ),
+                    rhs: Int(
+                        4,
+                        Span {
+                            start: 4,
+                            end: 5,
+                        },
+                    ),
+                    span: Span {
+                        start: 0,
+                        end: 5,
+                    },
+                },
+                rhs: Int(
+                    2,
+                    Span {
+                        start: 8,
+                        end: 9,
+                    },
+                ),
+                span: Span {
+                    start: 0,
+                    end: 9,
+                },
+            },
+        ),
+    ],
+)
