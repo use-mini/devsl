@@ -216,6 +216,20 @@ impl EvalError {
             cause: None,
         }
     }
+
+    pub fn with_cause(
+        category: ErrorCategory,
+        message: String,
+        span: Span,
+        cause: Box<dyn Error + Send + Sync>,
+    ) -> EvalError {
+        EvalError {
+            category,
+            message,
+            span,
+            cause: Some(cause),
+        }
+    }
 }
 
 struct Builtin {
@@ -223,7 +237,10 @@ struct Builtin {
     func: fn(&mut EvalCtx, &[Value], Span) -> Result<Option<Value>, EvalError>,
 }
 
-const BUILTINS: &[Builtin] = &[];
+const BUILTINS: &[Builtin] = &[Builtin {
+    name: "print",
+    func: builtin_print,
+}];
 
 fn builtin_lookup(name: &str) -> Option<&'static Builtin> {
     BUILTINS.iter().find(|b| b.name == name)
@@ -231,6 +248,40 @@ fn builtin_lookup(name: &str) -> Option<&'static Builtin> {
 
 fn builtin_is_name(name: &str) -> bool {
     BUILTINS.iter().any(|b| b.name == name)
+}
+
+fn builtin_print(
+    ctx: &mut EvalCtx,
+    args: &[Value],
+    span: Span,
+) -> Result<Option<Value>, EvalError> {
+    let mut first = true;
+    for v in args {
+        if !first {
+            ctx.out.write_all(b" ").map_err(|e| io_err(e, span))?;
+        }
+        first = false;
+        write_value(ctx.out, v).map_err(|e| io_err(e, span))?;
+    }
+    ctx.out.write_all(b"\n").map_err(|e| io_err(e, span))?;
+    Ok(None)
+}
+
+fn write_value(w: &mut dyn std::io::Write, v: &Value) -> std::io::Result<()> {
+    match v {
+        Value::Int(int) => write!(w, "{int}"),
+        Value::Float(float) => write!(w, "{float}"),
+        Value::String(string) => w.write_all(string.as_bytes()),
+    }
+}
+
+fn io_err(e: std::io::Error, span: Span) -> EvalError {
+    EvalError::with_cause(
+        ErrorCategory::Runtime,
+        format!("io error: {e}"),
+        span,
+        Box::new(e),
+    )
 }
 
 #[cfg(test)]
