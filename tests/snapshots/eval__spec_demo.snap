@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: run(src)
+---
+Ok(
+    "hello 5\n",
+)

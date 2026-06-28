@@ -21,6 +21,21 @@ fn hello_world() {
     insta::assert_debug_snapshot!(run(r#"print("Hello, World!")"#));
 }
 
+#[test]
+fn spec_demo() {
+    let src = "
+        var x = 2 + 3
+        const greeting = \"hello\"
+        print(greeting, string(x))
+    ";
+    insta::assert_debug_snapshot!(run(src));
+}
+
+#[test]
+fn arithmetic_in_var() {
+    insta::assert_debug_snapshot!(run("var n = 1 + 2 * 3\nprint(string(n))"));
+}
+
 mod print {
     use crate::run;
 
@@ -89,6 +104,30 @@ mod float_builtin {
     #[test]
     fn float_of_bad_string() {
         insta::assert_debug_snapshot!(run(r#"print(float("nope"))"#));
+    }
+}
+
+mod rules {
+    use crate::run;
+
+    #[test]
+    fn cannot_shadow_print() {
+        insta::assert_debug_snapshot!(run("var print = 1"));
+    }
+
+    #[test]
+    fn cannot_shadow_print_with_const() {
+        insta::assert_debug_snapshot!(run("const print = 1"));
+    }
+
+    #[test]
+    fn cannot_bind_print_result() {
+        insta::assert_debug_snapshot!(run("var x = print(\"hi\")"));
+    }
+
+    #[test]
+    fn unknown_identifier() {
+        insta::assert_debug_snapshot!(run("print(undefined_thing)"));
     }
 }
 

@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"var n = 1 + 2 * 3\\nprint(string(n))\")"
+---
+Ok(
+    "7\n",
+)
