@@ -1,0 +1,32 @@
+---
+source: tests/parser.rs
+expression: "parse(\"print(x)\")"
+---
+Ok(
+    [
+        Expr(
+            Call {
+                callee: Identifier(
+                    "print",
+                    Span {
+                        start: 0,
+                        end: 5,
+                    },
+                ),
+                args: [
+                    Identifier(
+                        "x",
+                        Span {
+                            start: 6,
+                            end: 7,
+                        },
+                    ),
+                ],
+                span: Span {
+                    start: 0,
+                    end: 8,
+                },
+            },
+        ),
+    ],
+)

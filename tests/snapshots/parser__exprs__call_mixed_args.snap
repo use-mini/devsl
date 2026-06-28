@@ -1,0 +1,61 @@
+---
+source: tests/parser.rs
+expression: "parse(r#\"f(x, \"y\", g(z))\"#)"
+---
+Ok(
+    [
+        Expr(
+            Call {
+                callee: Identifier(
+                    "f",
+                    Span {
+                        start: 0,
+                        end: 1,
+                    },
+                ),
+                args: [
+                    Identifier(
+                        "x",
+                        Span {
+                            start: 2,
+                            end: 3,
+                        },
+                    ),
+                    String(
+                        "y",
+                        Span {
+                            start: 5,
+                            end: 8,
+                        },
+                    ),
+                    Call {
+                        callee: Identifier(
+                            "g",
+                            Span {
+                                start: 10,
+                                end: 11,
+                            },
+                        ),
+                        args: [
+                            Identifier(
+                                "z",
+                                Span {
+                                    start: 12,
+                                    end: 13,
+                                },
+                            ),
+                        ],
+                        span: Span {
+                            start: 10,
+                            end: 14,
+                        },
+                    },
+                ],
+                span: Span {
+                    start: 0,
+                    end: 15,
+                },
+            },
+        ),
+    ],
+)

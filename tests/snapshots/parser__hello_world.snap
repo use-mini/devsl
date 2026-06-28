@@ -1,0 +1,32 @@
+---
+source: tests/parser.rs
+expression: "parse(r#\"print(\"Hello, World!\");\"#)"
+---
+Ok(
+    [
+        Expr(
+            Call {
+                callee: Identifier(
+                    "print",
+                    Span {
+                        start: 0,
+                        end: 5,
+                    },
+                ),
+                args: [
+                    String(
+                        "Hello, World!",
+                        Span {
+                            start: 6,
+                            end: 21,
+                        },
+                    ),
+                ],
+                span: Span {
+                    start: 0,
+                    end: 22,
+                },
+            },
+        ),
+    ],
+)

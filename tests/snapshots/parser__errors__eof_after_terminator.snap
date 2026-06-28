@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\";\")"
+---
+Err(
+    ParseError {
+        message: "expected expression, found SemiColon",
+        span: Span {
+            start: 0,
+            end: 1,
+        },
+    },
+)

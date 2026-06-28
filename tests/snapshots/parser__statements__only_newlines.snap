@@ -1,0 +1,7 @@
+---
+source: tests/parser.rs
+expression: "parse(\"\\n\\n\\n\")"
+---
+Ok(
+    [],
+)

@@ -1,0 +1,46 @@
+---
+source: tests/parser.rs
+expression: "parse(\"f(a, b, c)\")"
+---
+Ok(
+    [
+        Expr(
+            Call {
+                callee: Identifier(
+                    "f",
+                    Span {
+                        start: 0,
+                        end: 1,
+                    },
+                ),
+                args: [
+                    Identifier(
+                        "a",
+                        Span {
+                            start: 2,
+                            end: 3,
+                        },
+                    ),
+                    Identifier(
+                        "b",
+                        Span {
+                            start: 5,
+                            end: 6,
+                        },
+                    ),
+                    Identifier(
+                        "c",
+                        Span {
+                            start: 8,
+                            end: 9,
+                        },
+                    ),
+                ],
+                span: Span {
+                    start: 0,
+                    end: 10,
+                },
+            },
+        ),
+    ],
+)

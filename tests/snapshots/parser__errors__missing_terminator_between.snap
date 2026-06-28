@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"a() b()\")"
+---
+Err(
+    ParseError {
+        message: "expected new line or `;` after expression, found Identifier(\"b\")",
+        span: Span {
+            start: 4,
+            end: 5,
+        },
+    },
+)

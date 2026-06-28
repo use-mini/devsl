@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"print(\")"
+---
+Err(
+    ParseError {
+        message: "unexpected end of input",
+        span: Span {
+            start: 6,
+            end: 6,
+        },
+    },
+)
