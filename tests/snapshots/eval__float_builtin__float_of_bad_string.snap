@@ -1,0 +1,19 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print(float(\"nope\"))\"#)"
+---
+Err(
+    EvalError {
+        category: Type,
+        message: "cannot parse `nope` as float",
+        span: Span {
+            start: 6,
+            end: 19,
+        },
+        cause: Some(
+            ParseFloatError {
+                kind: Invalid,
+            },
+        ),
+    },
+)

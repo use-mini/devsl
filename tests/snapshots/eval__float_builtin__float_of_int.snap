@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print(float(7))\"#)"
+---
+Ok(
+    "7.0\n",
+)

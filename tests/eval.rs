@@ -71,6 +71,27 @@ mod int_builtin {
     }
 }
 
+mod float_builtin {
+    use crate::run;
+
+    #[test]
+    fn float_of_float() {
+        insta::assert_debug_snapshot!(run(r#"print(float(3.14))"#));
+    }
+    #[test]
+    fn float_of_int() {
+        insta::assert_debug_snapshot!(run(r#"print(float(7))"#));
+    }
+    #[test]
+    fn float_of_string() {
+        insta::assert_debug_snapshot!(run(r#"print(float("2.5"))"#));
+    }
+    #[test]
+    fn float_of_bad_string() {
+        insta::assert_debug_snapshot!(run(r#"print(float("nope"))"#));
+    }
+}
+
 mod string_builtin {
     use crate::run;
 
