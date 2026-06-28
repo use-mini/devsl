@@ -259,6 +259,31 @@ mod logical_binary {
     }
 }
 
+mod logical_not {
+    use crate::parse;
+
+    #[test]
+    fn not_bool() {
+        insta::assert_debug_snapshot!(parse("not true"));
+    }
+    #[test]
+    fn not_call() {
+        insta::assert_debug_snapshot!(parse("not f(x)"));
+    }
+    #[test]
+    fn double_not() {
+        insta::assert_debug_snapshot!(parse("not not true"));
+    }
+    #[test]
+    fn not_then_comparison() {
+        insta::assert_debug_snapshot!(parse("not 1 < 2"));
+    }
+    #[test]
+    fn not_in_and() {
+        insta::assert_debug_snapshot!(parse("not true and false"));
+    }
+}
+
 mod errors {
     use crate::parse;
 

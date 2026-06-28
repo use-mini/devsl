@@ -1,0 +1,23 @@
+---
+source: tests/parser.rs
+expression: "parse(\"not true\")"
+---
+Ok(
+    [
+        Expr(
+            Not {
+                inner: Bool(
+                    true,
+                    Span {
+                        start: 4,
+                        end: 8,
+                    },
+                ),
+                span: Span {
+                    start: 0,
+                    end: 8,
+                },
+            },
+        ),
+    ],
+)

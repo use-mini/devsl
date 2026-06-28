@@ -1,0 +1,38 @@
+---
+source: tests/parser.rs
+expression: "parse(\"not f(x)\")"
+---
+Ok(
+    [
+        Expr(
+            Not {
+                inner: Call {
+                    callee: Identifier(
+                        "f",
+                        Span {
+                            start: 4,
+                            end: 5,
+                        },
+                    ),
+                    args: [
+                        Identifier(
+                            "x",
+                            Span {
+                                start: 6,
+                                end: 7,
+                            },
+                        ),
+                    ],
+                    span: Span {
+                        start: 4,
+                        end: 8,
+                    },
+                },
+                span: Span {
+                    start: 0,
+                    end: 8,
+                },
+            },
+        ),
+    ],
+)
