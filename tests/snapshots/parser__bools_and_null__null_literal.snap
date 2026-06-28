@@ -1,0 +1,16 @@
+---
+source: tests/parser.rs
+expression: "parse(\"null\")"
+---
+Ok(
+    [
+        Expr(
+            Null(
+                Span {
+                    start: 0,
+                    end: 4,
+                },
+            ),
+        ),
+    ],
+)

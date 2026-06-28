@@ -1,0 +1,17 @@
+---
+source: tests/parser.rs
+expression: "parse(\"false\")"
+---
+Ok(
+    [
+        Expr(
+            Bool(
+                false,
+                Span {
+                    start: 0,
+                    end: 5,
+                },
+            ),
+        ),
+    ],
+)

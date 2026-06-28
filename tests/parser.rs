@@ -184,6 +184,23 @@ mod bindings {
     }
 }
 
+mod bools_and_null {
+    use crate::parse;
+
+    #[test]
+    fn bool_true() {
+        insta::assert_debug_snapshot!(parse("true"));
+    }
+    #[test]
+    fn bool_false() {
+        insta::assert_debug_snapshot!(parse("false"));
+    }
+    #[test]
+    fn null_literal() {
+        insta::assert_debug_snapshot!(parse("null"));
+    }
+}
+
 mod errors {
     use crate::parse;
 
