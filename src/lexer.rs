@@ -104,11 +104,6 @@ impl<'a> Lexer<'a> {
         self.code[self.pos..].chars().next()
     }
 
-    fn peek_next(&self) -> Option<char> {
-        let c = self.peek()?;
-        self.code[self.pos + c.len_utf8()..].chars().next()
-    }
-
     fn advance(&mut self) -> Option<char> {
         let c = self.code[self.pos..].chars().next()?;
         self.pos = self.pos + c.len_utf8();
