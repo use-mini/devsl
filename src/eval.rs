@@ -256,6 +256,10 @@ const BUILTINS: &[Builtin] = &[
         name: "string",
         func: builtin_string,
     },
+    Builtin {
+        name: "int",
+        func: builtin_int,
+    },
 ];
 
 fn builtin_lookup(name: &str) -> Option<&'static Builtin> {
@@ -300,6 +304,48 @@ fn builtin_string(call: BuiltinCall) -> Result<Option<Value>, EvalError> {
         Value::String(string) => string.clone(),
     };
     Ok(Some(Value::String(s)))
+}
+
+fn builtin_int(call: BuiltinCall) -> Result<Option<Value>, EvalError> {
+    if call.args.len() != 1 {
+        return Err(EvalError::new(
+            ErrorCategory::Type,
+            format!("`int` takes 1 argument, got {}", call.args.len()),
+            call.span,
+        ));
+    }
+
+    let int = match &call.args[0] {
+        Value::Int(int) => *int,
+        Value::Float(float) => {
+            if float.is_infinite() {
+                return Err(EvalError::new(
+                    ErrorCategory::Runtime,
+                    format!("cannot convert `{float}` to int"),
+                    call.span,
+                ));
+            }
+            let trunc = float.trunc();
+            // NOTE: `i64::MAX as f64` rounds up to i64::MAX + 1
+            if trunc >= i64::MAX as f64 || trunc < i64::MIN as f64 {
+                return Err(EvalError::new(
+                    ErrorCategory::Runtime,
+                    format!("float `{float:?}` is out of range for int (after f64 rounding)"),
+                    call.span,
+                ));
+            }
+            trunc as i64
+        }
+        Value::String(string) => string.parse::<i64>().map_err(|e| {
+            EvalError::with_cause(
+                ErrorCategory::Type,
+                format!("cannot parse `{string}` as int"),
+                call.span,
+                Box::new(e),
+            )
+        })?,
+    };
+    Ok(Some(Value::Int(int)))
 }
 
 fn write_value(w: &mut dyn std::io::Write, v: &Value) -> std::io::Result<()> {
