@@ -201,6 +201,42 @@ mod bools_and_null {
     }
 }
 
+mod comparisons {
+    use crate::parse;
+
+    #[test]
+    fn lt() {
+        insta::assert_debug_snapshot!(parse("1 < 2"));
+    }
+    #[test]
+    fn gt() {
+        insta::assert_debug_snapshot!(parse("3 > 1"));
+    }
+    #[test]
+    fn lt_eq() {
+        insta::assert_debug_snapshot!(parse("1 <= 1"));
+    }
+    #[test]
+    fn gt_eq() {
+        insta::assert_debug_snapshot!(parse("2 >= 2"));
+    }
+    #[test]
+    fn eq() {
+        insta::assert_debug_snapshot!(parse("1 == 1"));
+    }
+    #[test]
+    fn not_eq() {
+        insta::assert_debug_snapshot!(parse("1 != 2"));
+    }
+    #[test]
+    fn precedence_arith_in_cmp() {
+        insta::assert_debug_snapshot!(parse("1 + 2 < 3 * 4"));
+    }
+    #[test]
+    fn non_associative_chain() {
+        insta::assert_debug_snapshot!(parse("1 < 2 < 3"));
+    }
+}
 mod errors {
     use crate::parse;
 

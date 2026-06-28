@@ -1,0 +1,31 @@
+---
+source: tests/parser.rs
+expression: "parse(\"2 >= 2\")"
+---
+Ok(
+    [
+        Expr(
+            Binary {
+                op: GtEq,
+                lhs: Int(
+                    2,
+                    Span {
+                        start: 0,
+                        end: 1,
+                    },
+                ),
+                rhs: Int(
+                    2,
+                    Span {
+                        start: 5,
+                        end: 6,
+                    },
+                ),
+                span: Span {
+                    start: 0,
+                    end: 6,
+                },
+            },
+        ),
+    ],
+)

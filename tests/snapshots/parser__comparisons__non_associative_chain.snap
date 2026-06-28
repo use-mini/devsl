@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"1 < 2 < 3\")"
+---
+Err(
+    ParseError {
+        message: "chained comparison is not allowed; use `and` to combine",
+        span: Span {
+            start: 6,
+            end: 7,
+        },
+    },
+)

@@ -1,0 +1,31 @@
+---
+source: tests/parser.rs
+expression: "parse(\"3 > 1\")"
+---
+Ok(
+    [
+        Expr(
+            Binary {
+                op: Gt,
+                lhs: Int(
+                    3,
+                    Span {
+                        start: 0,
+                        end: 1,
+                    },
+                ),
+                rhs: Int(
+                    1,
+                    Span {
+                        start: 4,
+                        end: 5,
+                    },
+                ),
+                span: Span {
+                    start: 0,
+                    end: 5,
+                },
+            },
+        ),
+    ],
+)

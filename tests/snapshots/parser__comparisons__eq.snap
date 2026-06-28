@@ -1,0 +1,31 @@
+---
+source: tests/parser.rs
+expression: "parse(\"1 == 1\")"
+---
+Ok(
+    [
+        Expr(
+            Binary {
+                op: Eq,
+                lhs: Int(
+                    1,
+                    Span {
+                        start: 0,
+                        end: 1,
+                    },
+                ),
+                rhs: Int(
+                    1,
+                    Span {
+                        start: 5,
+                        end: 6,
+                    },
+                ),
+                span: Span {
+                    start: 0,
+                    end: 6,
+                },
+            },
+        ),
+    ],
+)
