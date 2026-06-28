@@ -142,11 +142,22 @@ fn eval_stmt(stmt: &Stmt, ctx: &mut EvalCtx) -> Result<(), EvalError> {
             ctx.env.pop_scope();
             result
         }
-        Stmt::Reassign { span, .. } => Err(EvalError::new(
-            ErrorCategory::Runtime,
-            "reassignment not implemented".into(),
-            *span,
-        )),
+        Stmt::Reassign { name, value, span } => {
+            let v = require_value(eval_expr(value, ctx)?, value.span())?;
+            match ctx.env.reassign(name, v) {
+                Ok(_) => Ok(()),
+                Err(ReassignError::Unknown) => Err(EvalError::new(
+                    ErrorCategory::Name,
+                    format!("unknown identifier `{name}`"),
+                    *span,
+                )),
+                Err(ReassignError::Const) => Err(EvalError::new(
+                    ErrorCategory::Name,
+                    format!("cannot reassign const `{name}`"),
+                    *span,
+                )),
+            }
+        }
     }
 }
 
@@ -985,6 +996,61 @@ mod tests {
                 var_stmt("x", Expr::Int(2, no_span())),
                 Stmt::Expr(ident("x")),
             ]),
+            Stmt::Expr(ident("x")),
+        ];
+        run_stmts(&stmts).unwrap();
+    }
+
+    fn reassign_stmt(name: &str, value: Expr) -> Stmt {
+        Stmt::Reassign {
+            name: name.into(),
+            value,
+            span: no_span(),
+        }
+    }
+
+    #[test]
+    fn reassign_existing_var() {
+        let stmts = vec![
+            var_stmt("x", Expr::Int(1, no_span())),
+            reassign_stmt("x", Expr::Int(2, no_span())),
+            Stmt::Expr(ident("x")),
+        ];
+        run_stmts(&stmts).unwrap();
+    }
+
+    #[test]
+    fn reassign_across_types() {
+        let stmts = vec![
+            var_stmt("x", Expr::Int(1, no_span())),
+            reassign_stmt("x", Expr::String("hi".into(), no_span())),
+        ];
+        run_stmts(&stmts).unwrap();
+    }
+
+    #[test]
+    fn reassign_unknown_is_name_error() {
+        let stmts = vec![reassign_stmt("nope", Expr::Int(1, no_span()))];
+        let err = run_stmts(&stmts).unwrap_err();
+        assert!(matches!(err.category, ErrorCategory::Name));
+    }
+
+    #[test]
+    fn reassign_const_is_name_error() {
+        let stmts = vec![
+            const_stmt("pi", Expr::Float(3.14, no_span())),
+            reassign_stmt("pi", Expr::Float(3.0, no_span())),
+        ];
+        let err = run_stmts(&stmts).unwrap_err();
+        assert!(matches!(err.category, ErrorCategory::Name));
+        assert!(err.message.contains("const"));
+    }
+
+    #[test]
+    fn reassign_in_inner_scope_affects_outer() {
+        let stmts = vec![
+            var_stmt("x", Expr::Int(1, no_span())),
+            block_stmt(vec![reassign_stmt("x", Expr::Int(2, no_span()))]),
             Stmt::Expr(ident("x")),
         ];
         run_stmts(&stmts).unwrap();
