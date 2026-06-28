@@ -247,10 +247,16 @@ struct Builtin {
     func: fn(BuiltinCall<'_, '_>) -> Result<Option<Value>, EvalError>,
 }
 
-const BUILTINS: &[Builtin] = &[Builtin {
-    name: "print",
-    func: builtin_print,
-}];
+const BUILTINS: &[Builtin] = &[
+    Builtin {
+        name: "print",
+        func: builtin_print,
+    },
+    Builtin {
+        name: "string",
+        func: builtin_string,
+    },
+];
 
 fn builtin_lookup(name: &str) -> Option<&'static Builtin> {
     BUILTINS.iter().find(|b| b.name == name)
@@ -277,6 +283,23 @@ fn builtin_print(call: BuiltinCall) -> Result<Option<Value>, EvalError> {
         .write_all(b"\n")
         .map_err(|e| io_err(e, call.span))?;
     Ok(None)
+}
+
+fn builtin_string(call: BuiltinCall) -> Result<Option<Value>, EvalError> {
+    if call.args.len() != 1 {
+        return Err(EvalError::new(
+            ErrorCategory::Type,
+            format!("`string` takes 1 argument, got {}", call.args.len()),
+            call.span,
+        ));
+    }
+
+    let s = match &call.args[0] {
+        Value::Int(int) => int.to_string(),
+        Value::Float(float) => float.to_string(),
+        Value::String(string) => string.clone(),
+    };
+    Ok(Some(Value::String(s)))
 }
 
 fn write_value(w: &mut dyn std::io::Write, v: &Value) -> std::io::Result<()> {
