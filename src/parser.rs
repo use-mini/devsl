@@ -38,6 +38,10 @@ pub enum Expr {
     Float(f64, Span),
     Bool(bool, Span),
     Null(Span),
+    Not {
+        inner: Box<Expr>,
+        span: Span,
+    },
     Binary {
         op: BinOp,
         lhs: Box<Expr>,
@@ -60,6 +64,7 @@ impl Expr {
             Expr::Float(_, span) => *span,
             Expr::Bool(_, span) => *span,
             Expr::Null(span) => *span,
+            Expr::Not { span, .. } => *span,
             Expr::Binary { span, .. } => *span,
             Expr::Call { span, .. } => *span,
         }
@@ -72,6 +77,7 @@ impl Expr {
             Expr::Float(float, _) => Expr::Float(float, span),
             Expr::Bool(bool, _) => Expr::Bool(bool, span),
             Expr::Null(_) => Expr::Null(span),
+            Expr::Not { inner, .. } => Expr::Not { inner, span },
             Expr::Binary { op, lhs, rhs, .. } => Expr::Binary { op, lhs, rhs, span },
             Expr::Call { callee, args, .. } => Expr::Call { callee, args, span },
         }
@@ -226,10 +232,10 @@ impl Parser {
     }
 
     fn parse_and(&mut self) -> Result<Expr, ParseError> {
-        let mut lhs = self.parse_comparison()?;
+        let mut lhs = self.parse_not()?;
         while matches!(self.peek().kind, TokenKind::And) {
             self.advance();
-            let rhs = self.parse_comparison()?;
+            let rhs = self.parse_not()?;
             let span = Span {
                 start: lhs.span().start,
                 end: rhs.span().end,
@@ -242,6 +248,23 @@ impl Parser {
             };
         }
         Ok(lhs)
+    }
+
+    fn parse_not(&mut self) -> Result<Expr, ParseError> {
+        if matches!(self.peek().kind, TokenKind::Not) {
+            let kw_span = self.peek().span;
+            self.advance();
+            let inner = self.parse_not()?;
+            let span = Span {
+                start: kw_span.start,
+                end: inner.span().end,
+            };
+            return Ok(Expr::Not {
+                inner: Box::new(inner),
+                span,
+            });
+        }
+        self.parse_comparison()
     }
 
     fn parse_comparison(&mut self) -> Result<Expr, ParseError> {
