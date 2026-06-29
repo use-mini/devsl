@@ -3,6 +3,13 @@ use std::{collections::HashMap, error::Error};
 use crate::lexer::Span;
 use crate::parser::{BinOp, Expr, Stmt};
 
+#[derive(PartialEq)]
+enum ControlFlow {
+    Normal,
+    Continue,
+    Break,
+}
+
 #[derive(Debug, Clone)]
 enum Value {
     String(String),
@@ -163,21 +170,30 @@ pub fn eval(stmts: &[Stmt], ctx: &mut EvalCtx) -> Result<(), EvalError> {
     Ok(())
 }
 
-fn eval_stmt(stmt: &Stmt, ctx: &mut EvalCtx) -> Result<(), EvalError> {
+fn eval_stmt(stmt: &Stmt, ctx: &mut EvalCtx) -> Result<ControlFlow, EvalError> {
     match stmt {
         Stmt::Expr(e) => {
             let _ = eval_expr(e, ctx)?;
-            Ok(())
+            Ok(ControlFlow::Normal)
         }
-        Stmt::Var { name, value, span } => bind(ctx, name, value, *span, false),
-        Stmt::Const { name, value, span } => bind(ctx, name, value, *span, true),
+        Stmt::Var { name, value, span } => {
+            bind(ctx, name, value, *span, false)?;
+            Ok(ControlFlow::Normal)
+        }
+        Stmt::Const { name, value, span } => {
+            bind(ctx, name, value, *span, true)?;
+            Ok(ControlFlow::Normal)
+        }
         Stmt::Block { stmts, .. } => {
             ctx.env.push_scope();
             let result = (|| {
                 for stmt in stmts {
-                    eval_stmt(stmt, ctx)?;
+                    let cf = eval_stmt(stmt, ctx)?;
+                    if cf != ControlFlow::Normal {
+                        return Ok(cf);
+                    }
                 }
-                Ok(())
+                Ok(ControlFlow::Normal)
             })();
             ctx.env.pop_scope();
             result
@@ -185,7 +201,7 @@ fn eval_stmt(stmt: &Stmt, ctx: &mut EvalCtx) -> Result<(), EvalError> {
         Stmt::Reassign { name, value, span } => {
             let v = require_value(eval_expr(value, ctx)?, value.span())?;
             match ctx.env.reassign(name, v) {
-                Ok(_) => Ok(()),
+                Ok(_) => Ok(ControlFlow::Normal),
                 Err(ReassignError::Unknown) => Err(EvalError::new(
                     ErrorCategory::Name,
                     format!("unknown identifier `{name}`"),
@@ -209,7 +225,7 @@ fn eval_stmt(stmt: &Stmt, ctx: &mut EvalCtx) -> Result<(), EvalError> {
                 Value::Bool(true) => eval_stmt(then_block, ctx),
                 Value::Bool(false) => match else_branch {
                     Some(branch) => eval_stmt(branch, ctx),
-                    None => Ok(()),
+                    None => Ok(ControlFlow::Normal),
                 },
                 other => Err(EvalError::new(
                     ErrorCategory::Type,
