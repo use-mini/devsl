@@ -419,3 +419,36 @@ mod objects {
         insta::assert_debug_snapshot!(run("print([] == {})"));
     }
 }
+
+mod member_access {
+    use crate::run;
+
+    #[test]
+    fn member_plain() {
+        insta::assert_debug_snapshot!(run(r#"print({name: "Ana"}.name)"#));
+    }
+    #[test]
+    fn member_extended() {
+        insta::assert_debug_snapshot!(run(r#"print({"first-name": "Ana"}.@first-name)"#));
+    }
+    #[test]
+    fn member_extended_key_to_extended_access() {
+        insta::assert_debug_snapshot!(run(r#"print({@first-name: "Ana"}.@first-name)"#));
+    }
+    #[test]
+    fn member_missing() {
+        insta::assert_debug_snapshot!(run(r#"print({name: "Ana"}.age)"#));
+    }
+    #[test]
+    fn member_on_list_is_type_error() {
+        insta::assert_debug_snapshot!(run("print([1, 2].name)"));
+    }
+    #[test]
+    fn member_on_int_is_type_error() {
+        insta::assert_debug_snapshot!(run("print((1).x)"));
+    }
+    #[test]
+    fn member_on_null_is_type_error() {
+        insta::assert_debug_snapshot!(run("print(null.x)"));
+    }
+}

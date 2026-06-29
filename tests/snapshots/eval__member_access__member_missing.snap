@@ -1,0 +1,15 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print({name: \"Ana\"}.age)\"#)"
+---
+Err(
+    EvalError {
+        category: Name,
+        message: "object has no field `age`",
+        span: Span {
+            start: 6,
+            end: 23,
+        },
+        cause: None,
+    },
+)

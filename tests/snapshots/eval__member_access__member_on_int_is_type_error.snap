@@ -1,0 +1,15 @@
+---
+source: tests/eval.rs
+expression: "run(\"print((1).x)\")"
+---
+Err(
+    EvalError {
+        category: Type,
+        message: "cannot access field `x` on Int",
+        span: Span {
+            start: 6,
+            end: 11,
+        },
+        cause: None,
+    },
+)
