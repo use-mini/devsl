@@ -501,3 +501,35 @@ mod bracket_access_eval {
         insta::assert_debug_snapshot!(run(r#"print("hi"[0])"#));
     }
 }
+
+mod chained_access {
+    use crate::run;
+
+    #[test]
+    fn member_then_index() {
+        insta::assert_debug_snapshot!(run(r#"print({xs: [10, 20]}.xs[1])"#));
+    }
+    #[test]
+    fn index_then_member() {
+        insta::assert_debug_snapshot!(run(r#"print([{n: 1}, {n: 2}][1].n)"#));
+    }
+    #[test]
+    fn deep_nested() {
+        insta::assert_debug_snapshot!(run(r#"print({a: {b: [{c: 42}]}}.a.b[0].c)"#));
+    }
+    #[test]
+    fn const_object_field_via_dot() {
+        insta::assert_debug_snapshot!(run(r#"
+            const u = {name: "Ana", tags: ["admin", "beta"]}
+            print(u.name, u.tags[0])
+            "#));
+    }
+    #[test]
+    fn equality_with_nested_lists_and_objects() {
+        insta::assert_debug_snapshot!(run(r#"
+            const a = {users: [{name: "Ana"}, {name: "Bo"}]}
+            const b = {users: [{name: "Ana"}, {name: "Bo"}]}
+            print(a == b)
+            "#));
+    }
+}

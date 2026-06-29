@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"\n            const a = {users: [{name: \"Ana\"}, {name: \"Bo\"}]}\n            const b = {users: [{name: \"Ana\"}, {name: \"Bo\"}]}\n            print(a == b)\n            \"#)"
+---
+Ok(
+    "true\n",
+)

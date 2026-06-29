@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print([{n: 1}, {n: 2}][1].n)\"#)"
+---
+Ok(
+    "2\n",
+)

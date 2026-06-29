@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"\n            const u = {name: \"Ana\", tags: [\"admin\", \"beta\"]}\n            print(u.name, u.tags[0])\n            \"#)"
+---
+Ok(
+    "Ana admin\n",
+)

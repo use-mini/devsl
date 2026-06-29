@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print({a: {b: [{c: 42}]}}.a.b[0].c)\"#)"
+---
+Ok(
+    "42\n",
+)
