@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print({name: \"Ana\"}[\"name\"])\"#)"
+---
+Ok(
+    "Ana\n",
+)

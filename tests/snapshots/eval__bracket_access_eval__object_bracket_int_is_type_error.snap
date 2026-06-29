@@ -1,0 +1,15 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print({a: 1}[0])\"#)"
+---
+Err(
+    EvalError {
+        category: Type,
+        message: "object key must be String, got Int",
+        span: Span {
+            start: 6,
+            end: 15,
+        },
+        cause: None,
+    },
+)

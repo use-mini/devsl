@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"print([10, 20][1])\")"
+---
+Ok(
+    "20\n",
+)

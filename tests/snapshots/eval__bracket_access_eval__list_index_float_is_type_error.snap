@@ -1,0 +1,15 @@
+---
+source: tests/eval.rs
+expression: "run(\"print([10, 20][1.0])\")"
+---
+Err(
+    EvalError {
+        category: Type,
+        message: "list index must be Int, got Float",
+        span: Span {
+            start: 6,
+            end: 19,
+        },
+        cause: None,
+    },
+)

@@ -452,3 +452,52 @@ mod member_access {
         insta::assert_debug_snapshot!(run("print(null.x)"));
     }
 }
+
+mod bracket_access_eval {
+    use crate::run;
+
+    #[test]
+    fn list_index_zero() {
+        insta::assert_debug_snapshot!(run("print([10, 20][0])"));
+    }
+    #[test]
+    fn list_index_last() {
+        insta::assert_debug_snapshot!(run("print([10, 20][1])"));
+    }
+    #[test]
+    fn list_index_out_of_bounds() {
+        insta::assert_debug_snapshot!(run("print([10, 20][5])"));
+    }
+    #[test]
+    fn list_index_negative_is_error() {
+        insta::assert_debug_snapshot!(run("print([10, 20][0 - 1])"));
+    }
+    #[test]
+    fn list_index_float_is_type_error() {
+        insta::assert_debug_snapshot!(run("print([10, 20][1.0])"));
+    }
+    #[test]
+    fn list_index_string_is_type_error() {
+        insta::assert_debug_snapshot!(run(r#"print([10, 20]["x"])"#));
+    }
+    #[test]
+    fn object_bracket_string() {
+        insta::assert_debug_snapshot!(run(r#"print({name: "Ana"}["name"])"#));
+    }
+    #[test]
+    fn object_bracket_missing() {
+        insta::assert_debug_snapshot!(run(r#"print({}["nope"])"#));
+    }
+    #[test]
+    fn object_bracket_int_is_type_error() {
+        insta::assert_debug_snapshot!(run(r#"print({a: 1}[0])"#));
+    }
+    #[test]
+    fn index_on_int_is_type_error() {
+        insta::assert_debug_snapshot!(run("print((1)[0])"));
+    }
+    #[test]
+    fn index_on_string_is_type_error() {
+        insta::assert_debug_snapshot!(run(r#"print("hi"[0])"#));
+    }
+}

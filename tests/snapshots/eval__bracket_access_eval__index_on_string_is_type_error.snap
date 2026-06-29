@@ -1,0 +1,15 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print(\"hi\"[0])\"#)"
+---
+Err(
+    EvalError {
+        category: Type,
+        message: "cannot index String",
+        span: Span {
+            start: 6,
+            end: 13,
+        },
+        cause: None,
+    },
+)

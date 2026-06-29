@@ -1,0 +1,15 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print({}[\"nope\"])\"#)"
+---
+Err(
+    EvalError {
+        category: Name,
+        message: "object has no key `nope`",
+        span: Span {
+            start: 6,
+            end: 16,
+        },
+        cause: None,
+    },
+)

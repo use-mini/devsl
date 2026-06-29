@@ -1,0 +1,15 @@
+---
+source: tests/eval.rs
+expression: "run(\"print([10, 20][0 - 1])\")"
+---
+Err(
+    EvalError {
+        category: Runtime,
+        message: "list index -1 out of bounds (length 2)",
+        span: Span {
+            start: 6,
+            end: 21,
+        },
+        cause: None,
+    },
+)
