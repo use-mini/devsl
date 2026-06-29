@@ -330,6 +330,15 @@ impl Parser {
         let then_block = self.parse_block()?;
         let mut end = then_block.span().end;
 
+        let saved_pos = self.pos;
+        while matches!(self.peek().kind, TokenKind::Newline) {
+            self.advance();
+        }
+        if !matches!(self.peek().kind, TokenKind::Else) {
+            // NOTE: restore pos, so newlines can be used as a statement terminator
+            self.pos = saved_pos;
+        }
+
         let else_branch = if matches!(self.peek().kind, TokenKind::Else) {
             self.advance();
             let branch = if matches!(self.peek().kind, TokenKind::If) {

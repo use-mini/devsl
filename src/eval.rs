@@ -158,7 +158,26 @@ fn eval_stmt(stmt: &Stmt, ctx: &mut EvalCtx) -> Result<(), EvalError> {
                 )),
             }
         }
-        _ => todo!(),
+        Stmt::If {
+            cond,
+            then_block,
+            else_branch,
+            ..
+        } => {
+            let v = require_value(eval_expr(cond, ctx)?, cond.span())?;
+            match v {
+                Value::Bool(true) => eval_stmt(then_block, ctx),
+                Value::Bool(false) => match else_branch {
+                    Some(branch) => eval_stmt(branch, ctx),
+                    None => Ok(()),
+                },
+                other => Err(EvalError::new(
+                    ErrorCategory::Type,
+                    format!("`if` condition must be Bool, got {other:?}"),
+                    cond.span(),
+                )),
+            }
+        }
     }
 }
 
@@ -1055,5 +1074,69 @@ mod tests {
             Stmt::Expr(ident("x")),
         ];
         run_stmts(&stmts).unwrap();
+    }
+
+    fn if_stmt(cond: Expr, then_block: Stmt, else_branch: Option<Stmt>) -> Stmt {
+        Stmt::If {
+            cond,
+            then_block: Box::new(then_block),
+            else_branch: else_branch.map(Box::new),
+            span: no_span(),
+        }
+    }
+
+    #[test]
+    fn if_true_runs_then() {
+        let stmts = vec![
+            var_stmt("hit", Expr::Bool(false, no_span())),
+            if_stmt(
+                Expr::Bool(true, no_span()),
+                block_stmt(vec![reassign_stmt("hit", Expr::Bool(true, no_span()))]),
+                None,
+            ),
+            Stmt::Expr(ident("hit")),
+        ];
+        run_stmts(&stmts).unwrap();
+    }
+
+    #[test]
+    fn if_false_skips_then() {
+        let stmts = vec![if_stmt(
+            Expr::Bool(false, no_span()),
+            block_stmt(vec![Stmt::Expr(ident("nope"))]),
+            None,
+        )];
+        run_stmts(&stmts).unwrap();
+    }
+
+    #[test]
+    fn if_false_runs_else() {
+        let stmts = vec![if_stmt(
+            Expr::Bool(false, no_span()),
+            block_stmt(vec![]),
+            Some(block_stmt(vec![var_stmt("x", Expr::Int(1, no_span()))])),
+        )];
+        run_stmts(&stmts).unwrap();
+    }
+
+    #[test]
+    fn if_non_bool_cond_is_type_error() {
+        let stmts = vec![if_stmt(Expr::Int(1, no_span()), block_stmt(vec![]), None)];
+        let err = run_stmts(&stmts).unwrap_err();
+        assert!(matches!(err.category, ErrorCategory::Type));
+    }
+
+    #[test]
+    fn if_then_block_has_its_own_scope() {
+        let stmts = vec![
+            if_stmt(
+                Expr::Bool(true, no_span()),
+                block_stmt(vec![var_stmt("x", Expr::Int(1, no_span()))]),
+                None,
+            ),
+            Stmt::Expr(ident("x")),
+        ];
+        let err = run_stmts(&stmts).unwrap_err();
+        assert!(matches!(err.category, ErrorCategory::Name));
     }
 }
