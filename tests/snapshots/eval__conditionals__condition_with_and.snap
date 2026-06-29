@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"if 1 < 2 and 3 > 2 { print(\"yes\") }\"#)"
+---
+Ok(
+    "yes\n",
+)

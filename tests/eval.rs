@@ -268,3 +268,68 @@ mod scoping {
         insta::assert_debug_snapshot!(run("var x = 1\n{}\nprint(x)"));
     }
 }
+
+mod conditionals {
+    use crate::run;
+
+    #[test]
+    fn if_true_prints_then() {
+        insta::assert_debug_snapshot!(run("if true { print(\"yes\") }"));
+    }
+
+    #[test]
+    fn if_false_no_else_skips() {
+        insta::assert_debug_snapshot!(run("if false { print(\"no\") }"));
+    }
+
+    #[test]
+    fn if_false_runs_else() {
+        insta::assert_debug_snapshot!(run(r#"if false { print("no") } else { print("yes") }"#));
+    }
+
+    #[test]
+    fn else_if_picks_middle() {
+        insta::assert_debug_snapshot!(run(r#"
+            var code = 404
+            if code >= 500 { print("server") }
+            else if code >= 400 { print("client") }
+            else { print("ok") }
+            "#));
+    }
+
+    #[test]
+    fn else_if_falls_through_to_else() {
+        insta::assert_debug_snapshot!(run(r#"
+            var code = 200
+            if code >= 500 { print("server") }
+            else if code >= 400 { print("client") }
+            else { print("ok") }
+            "#));
+    }
+
+    #[test]
+    fn condition_with_and() {
+        insta::assert_debug_snapshot!(run(r#"if 1 < 2 and 3 > 2 { print("yes") }"#));
+    }
+
+    #[test]
+    fn condition_non_bool_is_type_error() {
+        insta::assert_debug_snapshot!(run("if 5 { print(\"x\") }"));
+    }
+
+    #[test]
+    fn nested_if_inner_runs() {
+        insta::assert_debug_snapshot!(run(r#"
+            if true {
+                if true {
+                    print("inner")
+                }
+            }
+            "#));
+    }
+
+    #[test]
+    fn if_block_scope_does_not_leak() {
+        insta::assert_debug_snapshot!(run("if true { var x = 1 }\nprint(x)"));
+    }
+}

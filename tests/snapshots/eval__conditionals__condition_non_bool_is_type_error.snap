@@ -1,0 +1,15 @@
+---
+source: tests/eval.rs
+expression: "run(\"if 5 { print(\\\"x\\\") }\")"
+---
+Err(
+    EvalError {
+        category: Type,
+        message: "`if` condition must be Bool, got Int(5)",
+        span: Span {
+            start: 3,
+            end: 4,
+        },
+        cause: None,
+    },
+)

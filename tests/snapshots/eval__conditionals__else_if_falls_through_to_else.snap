@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"\n            var code = 200\n            if code >= 500 { print(\"server\") }\n            else if code >= 400 { print(\"client\") }\n            else { print(\"ok\") }\n            \"#)"
+---
+Ok(
+    "ok\n",
+)

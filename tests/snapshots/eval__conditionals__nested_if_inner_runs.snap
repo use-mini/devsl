@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"\n            if true {\n                if true {\n                    print(\"inner\")\n                }\n            }\n            \"#)"
+---
+Ok(
+    "inner\n",
+)

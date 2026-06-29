@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"if true { print(\\\"yes\\\") }\")"
+---
+Ok(
+    "yes\n",
+)
