@@ -346,7 +346,16 @@ fn eval_expr(expr: &Expr, ctx: &mut EvalCtx) -> Result<Option<Value>, EvalError>
 
             Ok(Some(Value::List(values)))
         }
+        Expr::Object { entries, .. } => {
+            let mut values = Vec::with_capacity(entries.len());
 
+            for (k, v) in entries {
+                let field = require_value(eval_expr(v, ctx)?, v.span())?;
+                values.push((k.clone(), field));
+            }
+
+            Ok(Some(Value::Object(values)))
+        }
         Expr::Null(_) => Ok(Some(Value::Null)),
         Expr::Not { inner, span } => {
             let v = require_value(eval_expr(inner, ctx)?, inner.span())?;
@@ -750,9 +759,7 @@ fn write_object_key(w: &mut dyn std::io::Write, key: &str) -> std::io::Result<()
         && first
             .map(|c| c.is_ascii_alphabetic() || c == '_')
             .unwrap_or(false)
-        && key
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
+        && key.chars().all(|c| c.is_ascii_alphanumeric() || c == '_');
     if is_bare {
         write!(w, "{key}")
     } else {
