@@ -158,6 +158,7 @@ fn eval_stmt(stmt: &Stmt, ctx: &mut EvalCtx) -> Result<(), EvalError> {
                 )),
             }
         }
+        _ => todo!(),
     }
 }
 

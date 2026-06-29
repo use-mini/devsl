@@ -106,6 +106,25 @@ pub enum Stmt {
         value: Expr,
         span: Span,
     },
+    If {
+        cond: Expr,
+        then_block: Box<Stmt>,
+        else_branch: Option<Box<Stmt>>,
+        span: Span,
+    },
+}
+
+impl Stmt {
+    pub fn span(&self) -> Span {
+        match self {
+            Stmt::Expr(e) => e.span(),
+            Stmt::Var { span, .. } => *span,
+            Stmt::Const { span, .. } => *span,
+            Stmt::Block { span, .. } => *span,
+            Stmt::Reassign { span, .. } => *span,
+            Stmt::If { span, .. } => *span,
+        }
+    }
 }
 
 pub struct Parser {
@@ -177,6 +196,7 @@ impl Parser {
             TokenKind::Var => self.parse_binding(true),
             TokenKind::Const => self.parse_binding(false),
             TokenKind::OCurly => self.parse_block(),
+            TokenKind::If => self.parse_if(),
             TokenKind::Identifier(_) if matches!(self.peek_next().kind, TokenKind::Eq) => {
                 self.parse_reassign()
             }
@@ -277,6 +297,67 @@ impl Parser {
             span: Span {
                 start: ocurly_span.start,
                 end: ccurly_span.end,
+            },
+        })
+    }
+
+    fn parse_if(&mut self) -> Result<Stmt, ParseError> {
+        let kw_span = self.peek().span;
+        self.advance();
+
+        if matches!(self.peek().kind, TokenKind::OCurly) {
+            return Err(ParseError::new(
+                "expected condition after `if`, found `{`".into(),
+                self.peek().span,
+            ));
+        }
+        let cond = self.parse_expr().map_err(|e| {
+            ParseError::new(
+                format!("expected condition after `if`: {}", e.message),
+                e.span,
+            )
+        })?;
+
+        if !matches!(self.peek().kind, TokenKind::OCurly) {
+            return Err(ParseError::new(
+                format!(
+                    "expected `{{` after if condition, found {:?}",
+                    self.peek().kind
+                ),
+                self.peek().span,
+            ));
+        }
+        let then_block = self.parse_block()?;
+        let mut end = then_block.span().end;
+
+        let else_branch = if matches!(self.peek().kind, TokenKind::Else) {
+            self.advance();
+            let branch = if matches!(self.peek().kind, TokenKind::If) {
+                self.parse_if()?
+            } else if matches!(self.peek().kind, TokenKind::OCurly) {
+                self.parse_block()?
+            } else {
+                return Err(ParseError::new(
+                    format!(
+                        "expected `{{` or `if` after `else`, found {:?}",
+                        self.peek().kind
+                    ),
+                    self.peek().span,
+                ));
+            };
+            end = branch.span().end;
+            Some(Box::new(branch))
+        } else {
+            None
+        };
+
+        Ok(Stmt::If {
+            cond,
+            then_block: Box::new(then_block),
+            else_branch,
+            span: Span {
+                start: kw_span.start,
+                end,
             },
         })
     }
