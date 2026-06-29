@@ -38,6 +38,10 @@ pub enum Expr {
     Float(f64, Span),
     Bool(bool, Span),
     Null(Span),
+    List {
+        items: Vec<Expr>,
+        span: Span,
+    },
     Not {
         inner: Box<Expr>,
         span: Span,
@@ -64,6 +68,7 @@ impl Expr {
             Expr::Float(_, span) => *span,
             Expr::Bool(_, span) => *span,
             Expr::Null(span) => *span,
+            Expr::List { span, .. } => *span,
             Expr::Not { span, .. } => *span,
             Expr::Binary { span, .. } => *span,
             Expr::Call { span, .. } => *span,
@@ -77,6 +82,7 @@ impl Expr {
             Expr::Float(float, _) => Expr::Float(float, span),
             Expr::Bool(bool, _) => Expr::Bool(bool, span),
             Expr::Null(_) => Expr::Null(span),
+            Expr::List { items, .. } => Expr::List { items, span },
             Expr::Not { inner, .. } => Expr::Not { inner, span },
             Expr::Binary { op, lhs, rhs, .. } => Expr::Binary { op, lhs, rhs, span },
             Expr::Call { callee, args, .. } => Expr::Call { callee, args, span },
@@ -567,6 +573,10 @@ impl Parser {
             }));
         }
 
+        if matches!(self.peek().kind, TokenKind::OBracket) {
+            return self.parse_list_literal();
+        }
+
         let token = self.peek().clone();
         self.advance();
         match token.kind {
@@ -628,5 +638,56 @@ impl Parser {
                 token.span,
             )),
         }
+    }
+
+    fn parse_list_literal(&mut self) -> Result<Expr, ParseError> {
+        let obracket_span = self.peek().span;
+        self.advance();
+        let mut cbracket_span = self.peek().span;
+        if matches!(self.peek().kind, TokenKind::CBracket) {
+            self.advance();
+            return Ok(Expr::List {
+                items: Vec::new(),
+                span: Span {
+                    start: obracket_span.start,
+                    end: cbracket_span.end,
+                },
+            });
+        }
+        let mut items = Vec::new();
+        loop {
+            while matches!(self.peek().kind, TokenKind::Newline) {
+                self.advance();
+            }
+            if matches!(self.peek().kind, TokenKind::Comma) {
+                self.advance();
+                while matches!(self.peek().kind, TokenKind::Newline) {
+                    self.advance();
+                }
+            }
+
+            if matches!(self.peek().kind, TokenKind::CBracket) {
+                cbracket_span = self.peek().span;
+                self.advance();
+                break;
+            }
+
+            let item = self.parse_expr()?;
+            items.push(item);
+
+            if !matches!(self.peek().kind, TokenKind::Comma | TokenKind::CBracket) {
+                return Err(ParseError::new(
+                    format!("expected `,` or `]`, found {:?}", self.peek().kind),
+                    self.peek().span,
+                ));
+            }
+        }
+        Ok(Expr::List {
+            items,
+            span: Span {
+                start: obracket_span.start,
+                end: cbracket_span.end,
+            },
+        })
     }
 }

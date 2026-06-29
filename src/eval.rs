@@ -309,6 +309,7 @@ fn eval_expr(expr: &Expr, ctx: &mut EvalCtx) -> Result<Option<Value>, EvalError>
                 )),
             }
         }
+        _ => todo!(),
     }
 }
 
@@ -341,6 +342,7 @@ fn check_names(expr: &Expr, ctx: &EvalCtx) -> Result<(), EvalError> {
         | Expr::String(_, _)
         | Expr::Bool(_, _)
         | Expr::Null(_) => Ok(()),
+        _ => todo!(),
     }
 }
 
