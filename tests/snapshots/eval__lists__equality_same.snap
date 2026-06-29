@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"print([1, 2] == [1, 2])\")"
+---
+Ok(
+    "true\n",
+)

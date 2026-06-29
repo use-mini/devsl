@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(r#\"print([\"a\", \"b\"])\"#)"
+---
+Ok(
+    "[\"a\", \"b\"]\n",
+)

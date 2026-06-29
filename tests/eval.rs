@@ -333,3 +333,40 @@ mod conditionals {
         insta::assert_debug_snapshot!(run("if true { var x = 1 }\nprint(x)"));
     }
 }
+
+mod lists {
+    use crate::run;
+
+    #[test]
+    fn print_empty() {
+        insta::assert_debug_snapshot!(run("print([])"));
+    }
+    #[test]
+    fn print_ints() {
+        insta::assert_debug_snapshot!(run("print([1, 2, 3])"));
+    }
+    #[test]
+    fn strings_quoted_inside() {
+        insta::assert_debug_snapshot!(run(r#"print(["a", "b"])"#));
+    }
+    #[test]
+    fn nested() {
+        insta::assert_debug_snapshot!(run("print([[1, 2], [3]])"));
+    }
+    #[test]
+    fn equality_same() {
+        insta::assert_debug_snapshot!(run("print([1, 2] == [1, 2])"));
+    }
+    #[test]
+    fn equality_diff_order() {
+        insta::assert_debug_snapshot!(run("print([1, 2] == [2, 1])"));
+    }
+    #[test]
+    fn equality_diff_len() {
+        insta::assert_debug_snapshot!(run("print([1, 2] == [1, 2, 3])"));
+    }
+    #[test]
+    fn equality_nested() {
+        insta::assert_debug_snapshot!(run("print([[1], [2]] == [[1], [2]])"));
+    }
+}
