@@ -138,6 +138,14 @@ pub enum Stmt {
         else_branch: Option<Box<Stmt>>,
         span: Span,
     },
+    For {
+        var: String,
+        iter: Expr,
+        body: Vec<Stmt>,
+        span: Span,
+    },
+    Continue(Span),
+    Break(Span),
 }
 
 impl Stmt {
@@ -149,6 +157,9 @@ impl Stmt {
             Stmt::Block { span, .. } => *span,
             Stmt::Reassign { span, .. } => *span,
             Stmt::If { span, .. } => *span,
+            Stmt::For { span, .. } => *span,
+            Stmt::Continue(span) => *span,
+            Stmt::Break(span) => *span,
         }
     }
 }
@@ -156,11 +167,16 @@ impl Stmt {
 pub struct Parser {
     tokens: Vec<Token>,
     pos: usize,
+    loop_depth: u32,
 }
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Parser {
-        Parser { tokens, pos: 0 }
+        Parser {
+            tokens,
+            pos: 0,
+            loop_depth: 0,
+        }
     }
 
     fn peek(&self) -> &Token {
@@ -227,6 +243,9 @@ impl Parser {
             TokenKind::Const => self.parse_binding(false),
             TokenKind::OCurly if !self.is_object_literal() => self.parse_block(),
             TokenKind::If => self.parse_if(),
+            TokenKind::For => self.parse_for(),
+            TokenKind::Continue => self.parse_continue(),
+            TokenKind::Break => self.parse_break(),
             TokenKind::Identifier(_) if matches!(self.peek_next().kind, TokenKind::Eq) => {
                 self.parse_reassign()
             }
@@ -896,5 +915,92 @@ impl Parser {
             }
         }
         Ok(lhs)
+    }
+
+    fn parse_for(&mut self) -> Result<Stmt, ParseError> {
+        let for_span = self.peek().span;
+        self.advance();
+        let var = match &self.peek().kind {
+            TokenKind::Identifier(name) => name.clone(),
+            _ => {
+                return Err(ParseError::new(
+                    format!(
+                        "expected loop variable after `for`, found {:?}",
+                        self.peek().kind
+                    ),
+                    self.peek().span,
+                ));
+            }
+        };
+        self.advance();
+        if !matches!(self.peek().kind, TokenKind::In) {
+            return Err(ParseError::new(
+                format!(
+                    "expected `in` after loop variable, found {:?}",
+                    self.peek().kind
+                ),
+                self.peek().span,
+            ));
+        }
+        self.advance();
+
+        let expr = self.parse_expr()?;
+
+        if !matches!(self.peek().kind, TokenKind::OCurly) {
+            return Err(ParseError::new(
+                format!(
+                    "expected `{{` to start `for` body, found {:?}",
+                    self.peek().kind
+                ),
+                self.peek().span,
+            ));
+        }
+
+        self.loop_depth += 1;
+        let block_result = self.parse_block();
+        self.loop_depth -= 1;
+        let block = block_result?;
+
+        let block_span = block.span();
+        let stmts = match block {
+            Stmt::Block { stmts, .. } => stmts,
+            _ => unreachable!("parse_block always returns Stmt::Block"),
+        };
+
+        Ok(Stmt::For {
+            var,
+            iter: expr,
+            body: stmts,
+            span: Span {
+                start: for_span.start,
+                end: block_span.end,
+            },
+        })
+    }
+
+    fn parse_continue(&mut self) -> Result<Stmt, ParseError> {
+        let continue_span = self.peek().span;
+        if self.loop_depth == 0 {
+            Err(ParseError::new(
+                format!("`continue` used outside a loop"),
+                continue_span,
+            ))
+        } else {
+            self.advance();
+            Ok(Stmt::Continue(continue_span))
+        }
+    }
+
+    fn parse_break(&mut self) -> Result<Stmt, ParseError> {
+        let break_span = self.peek().span;
+        if self.loop_depth == 0 {
+            Err(ParseError::new(
+                format!("`break` used outside a loop"),
+                break_span,
+            ))
+        } else {
+            self.advance();
+            Ok(Stmt::Break(break_span))
+        }
     }
 }
