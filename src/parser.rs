@@ -42,6 +42,10 @@ pub enum Expr {
         items: Vec<Expr>,
         span: Span,
     },
+    Object {
+        entries: Vec<(String, Expr)>,
+        span: Span,
+    },
     Not {
         inner: Box<Expr>,
         span: Span,
@@ -69,6 +73,7 @@ impl Expr {
             Expr::Bool(_, span) => *span,
             Expr::Null(span) => *span,
             Expr::List { span, .. } => *span,
+            Expr::Object { span, .. } => *span,
             Expr::Not { span, .. } => *span,
             Expr::Binary { span, .. } => *span,
             Expr::Call { span, .. } => *span,
@@ -83,6 +88,7 @@ impl Expr {
             Expr::Bool(bool, _) => Expr::Bool(bool, span),
             Expr::Null(_) => Expr::Null(span),
             Expr::List { items, .. } => Expr::List { items, span },
+            Expr::Object { entries, .. } => Expr::Object { entries, span },
             Expr::Not { inner, .. } => Expr::Not { inner, span },
             Expr::Binary { op, lhs, rhs, .. } => Expr::Binary { op, lhs, rhs, span },
             Expr::Call { callee, args, .. } => Expr::Call { callee, args, span },
@@ -147,13 +153,17 @@ impl Parser {
         &self.tokens[self.pos]
     }
 
-    fn peek_next(&self) -> &Token {
-        let idx = self.pos + 1;
+    fn peek_nth(&self, idx: usize) -> &Token {
+        let idx = self.pos + idx;
         if idx >= self.tokens.len() {
             &self.tokens[self.tokens.len() - 1] // Eof
         } else {
             &self.tokens[idx]
         }
+    }
+
+    fn peek_next(&self) -> &Token {
+        self.peek_nth(1)
     }
 
     fn is_at_end(&self) -> bool {
@@ -201,7 +211,7 @@ impl Parser {
         match self.peek().kind {
             TokenKind::Var => self.parse_binding(true),
             TokenKind::Const => self.parse_binding(false),
-            TokenKind::OCurly => self.parse_block(),
+            TokenKind::OCurly if !self.is_object_literal() => self.parse_block(),
             TokenKind::If => self.parse_if(),
             TokenKind::Identifier(_) if matches!(self.peek_next().kind, TokenKind::Eq) => {
                 self.parse_reassign()
@@ -577,6 +587,10 @@ impl Parser {
             return self.parse_list_literal();
         }
 
+        if matches!(self.peek().kind, TokenKind::OCurly) {
+            return self.parse_object_literal();
+        }
+
         let token = self.peek().clone();
         self.advance();
         match token.kind {
@@ -687,6 +701,108 @@ impl Parser {
             span: Span {
                 start: obracket_span.start,
                 end: cbracket_span.end,
+            },
+        })
+    }
+
+    fn is_object_literal(&self) -> bool {
+        matches!(self.peek_nth(1).kind, TokenKind::CCurly)
+            || (matches!(
+                self.peek_nth(1).kind,
+                TokenKind::Identifier(_)
+                    | TokenKind::ExtendedIdentifier(_)
+                    | TokenKind::StringLiteral(_)
+            ) && matches!(self.peek_nth(2).kind, TokenKind::Colon))
+    }
+
+    fn parse_object_literal(&mut self) -> Result<Expr, ParseError> {
+        let ocurly_span = self.peek().span;
+        self.advance();
+        let mut ccurly_span = self.peek().span;
+        if matches!(self.peek().kind, TokenKind::CCurly) {
+            self.advance();
+            return Ok(Expr::Object {
+                entries: Vec::new(),
+                span: Span {
+                    start: ocurly_span.start,
+                    end: ccurly_span.end,
+                },
+            });
+        }
+
+        let mut entries = Vec::<(String, Expr)>::new();
+        loop {
+            while matches!(self.peek().kind, TokenKind::Newline) {
+                self.advance();
+            }
+            if matches!(self.peek().kind, TokenKind::Comma) {
+                self.advance();
+                while matches!(self.peek().kind, TokenKind::Newline) {
+                    self.advance();
+                }
+            }
+
+            if matches!(self.peek().kind, TokenKind::CCurly) {
+                ccurly_span = self.peek().span;
+                self.advance();
+                break;
+            }
+
+            let key_span = self.peek().span;
+            let key_name = match &self.peek().kind {
+                TokenKind::ExtendedIdentifier(s) => s.clone(),
+                TokenKind::StringLiteral(s) => s.clone(),
+                TokenKind::Identifier(identifier) => identifier.clone(),
+                _ => {
+                    return Err(ParseError::new(
+                        format!(
+                            "expected object key (identifier, @kebab-key or string), found {:?}",
+                            self.peek().kind
+                        ),
+                        self.peek().span,
+                    ));
+                }
+            };
+            self.advance();
+
+            for e in entries.iter() {
+                if e.0 == key_name {
+                    return Err(ParseError::new(
+                        format!("`{key_name}` is already defined in the object"),
+                        key_span,
+                    ));
+                }
+            }
+
+            if matches!(self.peek().kind, TokenKind::Colon) {
+                self.advance();
+            } else {
+                return Err(ParseError::new(
+                    format!(
+                        "expected `:` after identifier `{key_name}`, found {:?}",
+                        self.peek().kind
+                    ),
+                    self.peek().span,
+                ));
+            }
+
+            let value = self.parse_expr()?;
+
+            entries.push((key_name, value));
+
+            if !matches!(self.peek().kind, TokenKind::Comma | TokenKind::CCurly) {
+                return Err(ParseError::new(
+                    format!("expected `,` or `}}`, found {:?}", self.peek().kind),
+                    self.peek().span,
+                ));
+            }
+        }
+
+        Ok(Expr::Object {
+            entries,
+            span: Span {
+                start: ocurly_span.start,
+                end: ccurly_span.end,
             },
         })
     }

@@ -265,7 +265,7 @@ mod scoping {
     }
     #[test]
     fn empty_block_is_noop() {
-        insta::assert_debug_snapshot!(run("var x = 1\n{}\nprint(x)"));
+        insta::assert_debug_snapshot!(run("var x = 1\nif true {}\nprint(x)"));
     }
 }
 
