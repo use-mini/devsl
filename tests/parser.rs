@@ -421,3 +421,36 @@ mod errors {
         insta::assert_debug_snapshot!(parse(";"));
     }
 }
+
+mod list_literal {
+    use crate::parse;
+
+    #[test]
+    fn empty() {
+        insta::assert_debug_snapshot!(parse("[]"));
+    }
+    #[test]
+    fn one_elem() {
+        insta::assert_debug_snapshot!(parse("[1]"));
+    }
+    #[test]
+    fn many() {
+        insta::assert_debug_snapshot!(parse("[1, 2, 3]"));
+    }
+    #[test]
+    fn trailing_comma() {
+        insta::assert_debug_snapshot!(parse("[1, 2,]"));
+    }
+    #[test]
+    fn nested() {
+        insta::assert_debug_snapshot!(parse("[[1, 2], [3, 4]]"));
+    }
+    #[test]
+    fn multiline() {
+        insta::assert_debug_snapshot!(parse("[\n  1,\n  2,\n]"));
+    }
+    #[test]
+    fn unclosed_is_error() {
+        insta::assert_debug_snapshot!(parse("[1, 2"));
+    }
+}

@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"[1, 2\")"
+---
+Err(
+    ParseError {
+        message: "expected `,` or `]`, found Eof",
+        span: Span {
+            start: 5,
+            end: 5,
+        },
+    },
+)
