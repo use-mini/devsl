@@ -46,6 +46,11 @@ pub enum Expr {
         entries: Vec<(String, Expr)>,
         span: Span,
     },
+    Member {
+        recv: Box<Expr>,
+        field: String,
+        span: Span,
+    },
     Not {
         inner: Box<Expr>,
         span: Span,
@@ -74,6 +79,7 @@ impl Expr {
             Expr::Null(span) => *span,
             Expr::List { span, .. } => *span,
             Expr::Object { span, .. } => *span,
+            Expr::Member { span, .. } => *span,
             Expr::Not { span, .. } => *span,
             Expr::Binary { span, .. } => *span,
             Expr::Call { span, .. } => *span,
@@ -89,6 +95,7 @@ impl Expr {
             Expr::Null(_) => Expr::Null(span),
             Expr::List { items, .. } => Expr::List { items, span },
             Expr::Object { entries, .. } => Expr::Object { entries, span },
+            Expr::Member { recv, field, .. } => Expr::Member { recv, field, span },
             Expr::Not { inner, .. } => Expr::Not { inner, span },
             Expr::Binary { op, lhs, rhs, .. } => Expr::Binary { op, lhs, rhs, span },
             Expr::Call { callee, args, .. } => Expr::Call { callee, args, span },
@@ -533,7 +540,7 @@ impl Parser {
     }
 
     fn parse_multiplicative(&mut self) -> Result<Expr, ParseError> {
-        let mut lhs = self.parse_primary()?;
+        let mut lhs = self.parse_postfix()?;
 
         loop {
             let op = match self.peek().kind {
@@ -542,7 +549,7 @@ impl Parser {
                 _ => break,
             };
             self.advance();
-            let rhs = self.parse_primary()?;
+            let rhs = self.parse_postfix()?;
             let span = Span {
                 start: lhs.span().start,
                 end: rhs.span().end,
@@ -805,5 +812,37 @@ impl Parser {
                 end: ccurly_span.end,
             },
         })
+    }
+
+    fn parse_postfix(&mut self) -> Result<Expr, ParseError> {
+        let mut lhs = self.parse_primary()?;
+        while matches!(self.peek().kind, TokenKind::Dot) {
+            self.advance();
+
+            let field_span = self.peek().span;
+            let field = match &self.peek().kind {
+                TokenKind::Identifier(name) | TokenKind::ExtendedIdentifier(name) => name.clone(),
+                _ => {
+                    return Err(ParseError::new(
+                        format!(
+                            "expected field name after `.`, found {:?}",
+                            self.peek().kind
+                        ),
+                        self.peek().span,
+                    ));
+                }
+            };
+            self.advance();
+            let span = Span {
+                start: lhs.span().start,
+                end: field_span.end,
+            };
+            lhs = Expr::Member {
+                recv: Box::new(lhs),
+                field,
+                span,
+            };
+        }
+        Ok(lhs)
     }
 }
