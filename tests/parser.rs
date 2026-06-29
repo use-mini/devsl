@@ -454,3 +454,62 @@ mod list_literal {
         insta::assert_debug_snapshot!(parse("[1, 2"));
     }
 }
+
+mod object_literal {
+    use crate::parse;
+
+    #[test]
+    fn empty() {
+        insta::assert_debug_snapshot!(parse("var u = {}"));
+    }
+    #[test]
+    fn bare_ident_keys() {
+        insta::assert_debug_snapshot!(parse(r#"var u = {name: "Ana", age: 30}"#));
+    }
+    #[test]
+    fn string_literal_keys() {
+        insta::assert_debug_snapshot!(parse(r#"var u = {"first-name": "Ana"}"#));
+    }
+    #[test]
+    fn extended_ident_key() {
+        insta::assert_debug_snapshot!(parse(r#"var u = {@first-name: "Ana"}"#));
+    }
+    #[test]
+    fn mixed_keys() {
+        insta::assert_debug_snapshot!(parse(
+            r#"var u = {name: "Ana", @first-name: "A", "last-name": "B"}"#
+        ));
+    }
+    #[test]
+    fn nested() {
+        insta::assert_debug_snapshot!(parse(r#"var u = {a: {b: 1}, c: [1, 2]}"#));
+    }
+    #[test]
+    fn duplicate_key_is_parse_error() {
+        insta::assert_debug_snapshot!(parse("var u = {a: 1, a: 2}"));
+    }
+    #[test]
+    fn lookahead_disambiguates() {
+        insta::assert_debug_snapshot!(parse("var u = {a: 1}\n{ print(1) }"));
+    }
+    #[test]
+    fn statement_position_empty_object() {
+        insta::assert_debug_snapshot!(parse("{}"));
+    }
+    #[test]
+    fn statement_position_object_with_keys() {
+        insta::assert_debug_snapshot!(parse(r#"{name: "Ana"}"#));
+    }
+    #[test]
+    fn statement_position_block_with_identifier() {
+        insta::assert_debug_snapshot!(parse("{ x }"));
+    }
+    #[test]
+    fn multiline() {
+        insta::assert_debug_snapshot!(parse("var u = {\n  a: 1,\n  b: 2,\n}"));
+    }
+    #[test]
+    fn unclosed_is_error() {
+        insta::assert_debug_snapshot!(parse("var u = {a: 1"));
+    }
+}

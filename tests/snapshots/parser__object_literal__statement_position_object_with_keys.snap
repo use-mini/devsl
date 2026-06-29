@@ -1,0 +1,28 @@
+---
+source: tests/parser.rs
+expression: "parse(r#\"{name: \"Ana\"}\"#)"
+---
+Ok(
+    [
+        Expr(
+            Object {
+                entries: [
+                    (
+                        "name",
+                        String(
+                            "Ana",
+                            Span {
+                                start: 7,
+                                end: 12,
+                            },
+                        ),
+                    ),
+                ],
+                span: Span {
+                    start: 0,
+                    end: 13,
+                },
+            },
+        ),
+    ],
+)

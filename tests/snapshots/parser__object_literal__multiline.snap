@@ -1,0 +1,43 @@
+---
+source: tests/parser.rs
+expression: "parse(\"var u = {\\n  a: 1,\\n  b: 2,\\n}\")"
+---
+Ok(
+    [
+        Var {
+            name: "u",
+            value: Object {
+                entries: [
+                    (
+                        "a",
+                        Int(
+                            1,
+                            Span {
+                                start: 15,
+                                end: 16,
+                            },
+                        ),
+                    ),
+                    (
+                        "b",
+                        Int(
+                            2,
+                            Span {
+                                start: 23,
+                                end: 24,
+                            },
+                        ),
+                    ),
+                ],
+                span: Span {
+                    start: 8,
+                    end: 27,
+                },
+            },
+            span: Span {
+                start: 0,
+                end: 27,
+            },
+        },
+    ],
+)

@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"var u = {a: 1, a: 2}\")"
+---
+Err(
+    ParseError {
+        message: "expected expression after `=`: `a` is already defined in the object",
+        span: Span {
+            start: 15,
+            end: 16,
+        },
+    },
+)

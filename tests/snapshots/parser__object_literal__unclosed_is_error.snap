@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"var u = {a: 1\")"
+---
+Err(
+    ParseError {
+        message: "expected expression after `=`: expected `,` or `}`, found Eof",
+        span: Span {
+            start: 13,
+            end: 13,
+        },
+    },
+)

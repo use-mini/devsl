@@ -1,0 +1,43 @@
+---
+source: tests/parser.rs
+expression: "parse(r#\"var u = {name: \"Ana\", age: 30}\"#)"
+---
+Ok(
+    [
+        Var {
+            name: "u",
+            value: Object {
+                entries: [
+                    (
+                        "name",
+                        String(
+                            "Ana",
+                            Span {
+                                start: 15,
+                                end: 20,
+                            },
+                        ),
+                    ),
+                    (
+                        "age",
+                        Int(
+                            30,
+                            Span {
+                                start: 27,
+                                end: 29,
+                            },
+                        ),
+                    ),
+                ],
+                span: Span {
+                    start: 8,
+                    end: 30,
+                },
+            },
+            span: Span {
+                start: 0,
+                end: 30,
+            },
+        },
+    ],
+)

@@ -1,0 +1,25 @@
+---
+source: tests/parser.rs
+expression: "parse(\"{ x }\")"
+---
+Ok(
+    [
+        Block {
+            stmts: [
+                Expr(
+                    Identifier(
+                        "x",
+                        Span {
+                            start: 2,
+                            end: 3,
+                        },
+                    ),
+                ),
+            ],
+            span: Span {
+                start: 0,
+                end: 5,
+            },
+        },
+    ],
+)

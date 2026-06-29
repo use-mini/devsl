@@ -1,0 +1,65 @@
+---
+source: tests/parser.rs
+expression: "parse(\"var u = {a: 1}\\n{ print(1) }\")"
+---
+Ok(
+    [
+        Var {
+            name: "u",
+            value: Object {
+                entries: [
+                    (
+                        "a",
+                        Int(
+                            1,
+                            Span {
+                                start: 12,
+                                end: 13,
+                            },
+                        ),
+                    ),
+                ],
+                span: Span {
+                    start: 8,
+                    end: 14,
+                },
+            },
+            span: Span {
+                start: 0,
+                end: 14,
+            },
+        },
+        Block {
+            stmts: [
+                Expr(
+                    Call {
+                        callee: Identifier(
+                            "print",
+                            Span {
+                                start: 17,
+                                end: 22,
+                            },
+                        ),
+                        args: [
+                            Int(
+                                1,
+                                Span {
+                                    start: 23,
+                                    end: 24,
+                                },
+                            ),
+                        ],
+                        span: Span {
+                            start: 17,
+                            end: 25,
+                        },
+                    },
+                ),
+            ],
+            span: Span {
+                start: 15,
+                end: 27,
+            },
+        },
+    ],
+)
