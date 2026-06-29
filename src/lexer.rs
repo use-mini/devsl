@@ -64,6 +64,8 @@ pub enum TokenKind {
     Return,
     For,
     In,
+    Continue,
+    Break,
     Null,
     Fn,
 
@@ -326,6 +328,8 @@ impl<'a> Lexer<'a> {
             "return" => Ok(Token::new(TokenKind::Return, start, self.pos)),
             "for" => Ok(Token::new(TokenKind::For, start, self.pos)),
             "in" => Ok(Token::new(TokenKind::In, start, self.pos)),
+            "continue" => Ok(Token::new(TokenKind::Continue, start, self.pos)),
+            "break" => Ok(Token::new(TokenKind::Break, start, self.pos)),
             "null" => Ok(Token::new(TokenKind::Null, start, self.pos)),
             "fn" => Ok(Token::new(TokenKind::Fn, start, self.pos)),
             _ => Ok(Token::new(TokenKind::Identifier(name), start, self.pos)),

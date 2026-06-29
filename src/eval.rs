@@ -847,6 +847,8 @@ fn is_keyword(string: &str) -> bool {
             | "return"
             | "for"
             | "in"
+            | "continue"
+            | "break"
             | "null"
             | "fn"
     )
