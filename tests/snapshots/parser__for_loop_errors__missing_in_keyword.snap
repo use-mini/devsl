@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"for x xs { }\")"
+---
+Err(
+    ParseError {
+        message: "expected `in` after loop variable, found Identifier(\"xs\")",
+        span: Span {
+            start: 6,
+            end: 8,
+        },
+    },
+)

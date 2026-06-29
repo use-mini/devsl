@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"for x in xs\")"
+---
+Err(
+    ParseError {
+        message: "expected `{` to start `for` body, found Eof",
+        span: Span {
+            start: 11,
+            end: 11,
+        },
+    },
+)

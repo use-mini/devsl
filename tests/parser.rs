@@ -575,3 +575,61 @@ mod bracket_access {
         insta::assert_debug_snapshot!(parse("xs[1"));
     }
 }
+
+mod for_loop {
+    use crate::parse;
+
+    #[test]
+    fn basic_for() {
+        insta::assert_debug_snapshot!(parse("for x in [1, 2, 3] { print(x) }"));
+    }
+    #[test]
+    fn empty_body() {
+        insta::assert_debug_snapshot!(parse("for x in xs { }"));
+    }
+    #[test]
+    fn break_inside_loop() {
+        insta::assert_debug_snapshot!(parse("for x in xs { break }"));
+    }
+    #[test]
+    fn continue_inside_loop() {
+        insta::assert_debug_snapshot!(parse("for x in xs { continue }"));
+    }
+    #[test]
+    fn break_inside_if_inside_loop() {
+        insta::assert_debug_snapshot!(parse("for x in xs { if x > 5 { break } }"));
+    }
+    #[test]
+    fn nested_for() {
+        insta::assert_debug_snapshot!(parse("for x in xs { for y in ys { break } }"));
+    }
+}
+
+mod for_loop_errors {
+    use crate::parse;
+
+    #[test]
+    fn missing_loop_var() {
+        insta::assert_debug_snapshot!(parse("for in xs { }"));
+    }
+    #[test]
+    fn missing_in_keyword() {
+        insta::assert_debug_snapshot!(parse("for x xs { }"));
+    }
+    #[test]
+    fn missing_body() {
+        insta::assert_debug_snapshot!(parse("for x in xs"));
+    }
+    #[test]
+    fn break_outside_loop() {
+        insta::assert_debug_snapshot!(parse("break"));
+    }
+    #[test]
+    fn continue_outside_loop() {
+        insta::assert_debug_snapshot!(parse("continue"));
+    }
+    #[test]
+    fn break_inside_if_outside_loop() {
+        insta::assert_debug_snapshot!(parse("if true { break }"));
+    }
+}

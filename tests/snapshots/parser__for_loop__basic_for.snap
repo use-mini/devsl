@@ -1,0 +1,70 @@
+---
+source: tests/parser.rs
+expression: "parse(\"for x in [1, 2, 3] { print(x) }\")"
+---
+Ok(
+    [
+        For {
+            var: "x",
+            iter: List {
+                items: [
+                    Int(
+                        1,
+                        Span {
+                            start: 10,
+                            end: 11,
+                        },
+                    ),
+                    Int(
+                        2,
+                        Span {
+                            start: 13,
+                            end: 14,
+                        },
+                    ),
+                    Int(
+                        3,
+                        Span {
+                            start: 16,
+                            end: 17,
+                        },
+                    ),
+                ],
+                span: Span {
+                    start: 9,
+                    end: 18,
+                },
+            },
+            body: [
+                Expr(
+                    Call {
+                        callee: Identifier(
+                            "print",
+                            Span {
+                                start: 21,
+                                end: 26,
+                            },
+                        ),
+                        args: [
+                            Identifier(
+                                "x",
+                                Span {
+                                    start: 27,
+                                    end: 28,
+                                },
+                            ),
+                        ],
+                        span: Span {
+                            start: 21,
+                            end: 29,
+                        },
+                    },
+                ),
+            ],
+            span: Span {
+                start: 0,
+                end: 31,
+            },
+        },
+    ],
+)

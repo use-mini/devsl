@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"continue\")"
+---
+Err(
+    ParseError {
+        message: "`continue` used outside a loop",
+        span: Span {
+            start: 0,
+            end: 8,
+        },
+    },
+)

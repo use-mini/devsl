@@ -1,0 +1,66 @@
+---
+source: tests/parser.rs
+expression: "parse(\"for x in xs { if x > 5 { break } }\")"
+---
+Ok(
+    [
+        For {
+            var: "x",
+            iter: Identifier(
+                "xs",
+                Span {
+                    start: 9,
+                    end: 11,
+                },
+            ),
+            body: [
+                If {
+                    cond: Binary {
+                        op: Gt,
+                        lhs: Identifier(
+                            "x",
+                            Span {
+                                start: 17,
+                                end: 18,
+                            },
+                        ),
+                        rhs: Int(
+                            5,
+                            Span {
+                                start: 21,
+                                end: 22,
+                            },
+                        ),
+                        span: Span {
+                            start: 17,
+                            end: 22,
+                        },
+                    },
+                    then_block: Block {
+                        stmts: [
+                            Break(
+                                Span {
+                                    start: 25,
+                                    end: 30,
+                                },
+                            ),
+                        ],
+                        span: Span {
+                            start: 23,
+                            end: 32,
+                        },
+                    },
+                    else_branch: None,
+                    span: Span {
+                        start: 14,
+                        end: 32,
+                    },
+                },
+            ],
+            span: Span {
+                start: 0,
+                end: 34,
+            },
+        },
+    ],
+)

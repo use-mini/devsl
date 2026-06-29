@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"if true { break }\")"
+---
+Err(
+    ParseError {
+        message: "`break` used outside a loop",
+        span: Span {
+            start: 10,
+            end: 15,
+        },
+    },
+)

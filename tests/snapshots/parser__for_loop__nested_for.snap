@@ -1,0 +1,46 @@
+---
+source: tests/parser.rs
+expression: "parse(\"for x in xs { for y in ys { break } }\")"
+---
+Ok(
+    [
+        For {
+            var: "x",
+            iter: Identifier(
+                "xs",
+                Span {
+                    start: 9,
+                    end: 11,
+                },
+            ),
+            body: [
+                For {
+                    var: "y",
+                    iter: Identifier(
+                        "ys",
+                        Span {
+                            start: 23,
+                            end: 25,
+                        },
+                    ),
+                    body: [
+                        Break(
+                            Span {
+                                start: 28,
+                                end: 33,
+                            },
+                        ),
+                    ],
+                    span: Span {
+                        start: 14,
+                        end: 35,
+                    },
+                },
+            ],
+            span: Span {
+                start: 0,
+                end: 37,
+            },
+        },
+    ],
+)
