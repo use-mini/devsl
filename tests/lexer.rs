@@ -271,6 +271,14 @@ mod keywords {
         insta::assert_debug_snapshot!(lex("fn"));
     }
     #[test]
+    fn break_kw() {
+        insta::assert_debug_snapshot!(lex("break"));
+    }
+    #[test]
+    fn continue_kw() {
+        insta::assert_debug_snapshot!(lex("continue"));
+    }
+    #[test]
     fn similar_idents() {
         insta::assert_debug_snapshot!(lex("andy ore notice"));
     }
