@@ -1,0 +1,30 @@
+---
+source: tests/parser.rs
+expression: "parse(r#\"obj[\"any-key\"]\"#)"
+---
+Ok(
+    [
+        Expr(
+            Index {
+                recv: Identifier(
+                    "obj",
+                    Span {
+                        start: 0,
+                        end: 3,
+                    },
+                ),
+                key: String(
+                    "any-key",
+                    Span {
+                        start: 4,
+                        end: 13,
+                    },
+                ),
+                span: Span {
+                    start: 0,
+                    end: 14,
+                },
+            },
+        ),
+    ],
+)

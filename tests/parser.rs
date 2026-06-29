@@ -542,3 +542,36 @@ mod member_access {
         insta::assert_debug_snapshot!(parse("a."));
     }
 }
+
+mod bracket_access {
+    use crate::parse;
+
+    #[test]
+    fn int_key() {
+        insta::assert_debug_snapshot!(parse("xs[0]"));
+    }
+    #[test]
+    fn string_key() {
+        insta::assert_debug_snapshot!(parse(r#"obj["any-key"]"#));
+    }
+    #[test]
+    fn expr_key() {
+        insta::assert_debug_snapshot!(parse("xs[i + 1]"));
+    }
+    #[test]
+    fn chained_with_member() {
+        insta::assert_debug_snapshot!(parse("u.tags[1].name"));
+    }
+    #[test]
+    fn chained_indices() {
+        insta::assert_debug_snapshot!(parse("xs[0][1]"));
+    }
+    #[test]
+    fn empty_brackets_is_error() {
+        insta::assert_debug_snapshot!(parse("xs[]"));
+    }
+    #[test]
+    fn unclosed_is_error() {
+        insta::assert_debug_snapshot!(parse("xs[1"));
+    }
+}

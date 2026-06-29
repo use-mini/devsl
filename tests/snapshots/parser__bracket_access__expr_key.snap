@@ -1,0 +1,44 @@
+---
+source: tests/parser.rs
+expression: "parse(\"xs[i + 1]\")"
+---
+Ok(
+    [
+        Expr(
+            Index {
+                recv: Identifier(
+                    "xs",
+                    Span {
+                        start: 0,
+                        end: 2,
+                    },
+                ),
+                key: Binary {
+                    op: Add,
+                    lhs: Identifier(
+                        "i",
+                        Span {
+                            start: 3,
+                            end: 4,
+                        },
+                    ),
+                    rhs: Int(
+                        1,
+                        Span {
+                            start: 7,
+                            end: 8,
+                        },
+                    ),
+                    span: Span {
+                        start: 3,
+                        end: 8,
+                    },
+                },
+                span: Span {
+                    start: 0,
+                    end: 9,
+                },
+            },
+        ),
+    ],
+)

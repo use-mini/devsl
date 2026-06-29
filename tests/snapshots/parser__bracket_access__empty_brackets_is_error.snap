@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"xs[]\")"
+---
+Err(
+    ParseError {
+        message: "expected expression after `[`, found CBracket",
+        span: Span {
+            start: 3,
+            end: 4,
+        },
+    },
+)

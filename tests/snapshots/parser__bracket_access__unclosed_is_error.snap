@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"xs[1\")"
+---
+Err(
+    ParseError {
+        message: "expected `]` after expression, found Eof",
+        span: Span {
+            start: 4,
+            end: 4,
+        },
+    },
+)
