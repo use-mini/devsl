@@ -370,3 +370,52 @@ mod lists {
         insta::assert_debug_snapshot!(run("print([[1], [2]] == [[1], [2]])"));
     }
 }
+
+mod objects {
+    use crate::run;
+
+    #[test]
+    fn print_empty() {
+        insta::assert_debug_snapshot!(run("print({})"));
+    }
+    #[test]
+    fn print_one() {
+        insta::assert_debug_snapshot!(run(r#"print({name: "Ana"})"#));
+    }
+    #[test]
+    fn print_many() {
+        insta::assert_debug_snapshot!(run(r#"print({name: "Ana", age: 30})"#));
+    }
+    #[test]
+    fn print_hyphen_key_quoted() {
+        insta::assert_debug_snapshot!(run(r#"print({"first-name": "Ana"})"#));
+    }
+    #[test]
+    fn print_extended_key_quoted() {
+        insta::assert_debug_snapshot!(run(r#"print({@first-name: "Ana"})"#));
+    }
+    #[test]
+    fn equality_same_order() {
+        insta::assert_debug_snapshot!(run("print({a: 1, b: 2} == {a: 1, b: 2})"));
+    }
+    #[test]
+    fn equality_diff_order() {
+        insta::assert_debug_snapshot!(run("print({a: 1, b: 2} == {b: 2, a: 1})"));
+    }
+    #[test]
+    fn equality_nested() {
+        insta::assert_debug_snapshot!(run("print({a: {b: 1}} == {a: {b: 1}})"));
+    }
+    #[test]
+    fn equality_diff_value() {
+        insta::assert_debug_snapshot!(run("print({a: 1} == {a: 2})"));
+    }
+    #[test]
+    fn equality_diff_keys() {
+        insta::assert_debug_snapshot!(run("print({a: 1} == {b: 1})"));
+    }
+    #[test]
+    fn cross_compound_equality_is_false() {
+        insta::assert_debug_snapshot!(run("print([] == {})"));
+    }
+}

@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"print({a: 1} == {b: 1})\")"
+---
+Ok(
+    "false\n",
+)
