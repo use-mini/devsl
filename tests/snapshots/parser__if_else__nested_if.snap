@@ -1,0 +1,76 @@
+---
+source: tests/parser.rs
+expression: "parse(\"if x { if y { print(z) } }\")"
+---
+Ok(
+    [
+        If {
+            cond: Identifier(
+                "x",
+                Span {
+                    start: 3,
+                    end: 4,
+                },
+            ),
+            then_block: Block {
+                stmts: [
+                    If {
+                        cond: Identifier(
+                            "y",
+                            Span {
+                                start: 10,
+                                end: 11,
+                            },
+                        ),
+                        then_block: Block {
+                            stmts: [
+                                Expr(
+                                    Call {
+                                        callee: Identifier(
+                                            "print",
+                                            Span {
+                                                start: 14,
+                                                end: 19,
+                                            },
+                                        ),
+                                        args: [
+                                            Identifier(
+                                                "z",
+                                                Span {
+                                                    start: 20,
+                                                    end: 21,
+                                                },
+                                            ),
+                                        ],
+                                        span: Span {
+                                            start: 14,
+                                            end: 22,
+                                        },
+                                    },
+                                ),
+                            ],
+                            span: Span {
+                                start: 12,
+                                end: 24,
+                            },
+                        },
+                        else_branch: None,
+                        span: Span {
+                            start: 7,
+                            end: 24,
+                        },
+                    },
+                ],
+                span: Span {
+                    start: 5,
+                    end: 26,
+                },
+            },
+            else_branch: None,
+            span: Span {
+                start: 0,
+                end: 26,
+            },
+        },
+    ],
+)

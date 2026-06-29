@@ -1,0 +1,134 @@
+---
+source: tests/parser.rs
+expression: "parse(r#\"if x { print(1) } else if y { print(2) } else { print(3) }\"#)"
+---
+Ok(
+    [
+        If {
+            cond: Identifier(
+                "x",
+                Span {
+                    start: 3,
+                    end: 4,
+                },
+            ),
+            then_block: Block {
+                stmts: [
+                    Expr(
+                        Call {
+                            callee: Identifier(
+                                "print",
+                                Span {
+                                    start: 7,
+                                    end: 12,
+                                },
+                            ),
+                            args: [
+                                Int(
+                                    1,
+                                    Span {
+                                        start: 13,
+                                        end: 14,
+                                    },
+                                ),
+                            ],
+                            span: Span {
+                                start: 7,
+                                end: 15,
+                            },
+                        },
+                    ),
+                ],
+                span: Span {
+                    start: 5,
+                    end: 17,
+                },
+            },
+            else_branch: Some(
+                If {
+                    cond: Identifier(
+                        "y",
+                        Span {
+                            start: 26,
+                            end: 27,
+                        },
+                    ),
+                    then_block: Block {
+                        stmts: [
+                            Expr(
+                                Call {
+                                    callee: Identifier(
+                                        "print",
+                                        Span {
+                                            start: 30,
+                                            end: 35,
+                                        },
+                                    ),
+                                    args: [
+                                        Int(
+                                            2,
+                                            Span {
+                                                start: 36,
+                                                end: 37,
+                                            },
+                                        ),
+                                    ],
+                                    span: Span {
+                                        start: 30,
+                                        end: 38,
+                                    },
+                                },
+                            ),
+                        ],
+                        span: Span {
+                            start: 28,
+                            end: 40,
+                        },
+                    },
+                    else_branch: Some(
+                        Block {
+                            stmts: [
+                                Expr(
+                                    Call {
+                                        callee: Identifier(
+                                            "print",
+                                            Span {
+                                                start: 48,
+                                                end: 53,
+                                            },
+                                        ),
+                                        args: [
+                                            Int(
+                                                3,
+                                                Span {
+                                                    start: 54,
+                                                    end: 55,
+                                                },
+                                            ),
+                                        ],
+                                        span: Span {
+                                            start: 48,
+                                            end: 56,
+                                        },
+                                    },
+                                ),
+                            ],
+                            span: Span {
+                                start: 46,
+                                end: 58,
+                            },
+                        },
+                    ),
+                    span: Span {
+                        start: 23,
+                        end: 58,
+                    },
+                },
+            ),
+            span: Span {
+                start: 0,
+                end: 58,
+            },
+        },
+    ],
+)

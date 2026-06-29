@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"if x { } else foo()\")"
+---
+Err(
+    ParseError {
+        message: "expected `{` or `if` after `else`, found Identifier(\"foo\")",
+        span: Span {
+            start: 14,
+            end: 17,
+        },
+    },
+)

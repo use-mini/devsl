@@ -1,0 +1,68 @@
+---
+source: tests/parser.rs
+expression: "parse(\"if x and y { print(z) }\")"
+---
+Ok(
+    [
+        If {
+            cond: Binary {
+                op: And,
+                lhs: Identifier(
+                    "x",
+                    Span {
+                        start: 3,
+                        end: 4,
+                    },
+                ),
+                rhs: Identifier(
+                    "y",
+                    Span {
+                        start: 9,
+                        end: 10,
+                    },
+                ),
+                span: Span {
+                    start: 3,
+                    end: 10,
+                },
+            },
+            then_block: Block {
+                stmts: [
+                    Expr(
+                        Call {
+                            callee: Identifier(
+                                "print",
+                                Span {
+                                    start: 13,
+                                    end: 18,
+                                },
+                            ),
+                            args: [
+                                Identifier(
+                                    "z",
+                                    Span {
+                                        start: 19,
+                                        end: 20,
+                                    },
+                                ),
+                            ],
+                            span: Span {
+                                start: 13,
+                                end: 21,
+                            },
+                        },
+                    ),
+                ],
+                span: Span {
+                    start: 11,
+                    end: 23,
+                },
+            },
+            else_branch: None,
+            span: Span {
+                start: 0,
+                end: 23,
+            },
+        },
+    ],
+)

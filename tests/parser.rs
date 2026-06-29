@@ -346,6 +346,49 @@ mod reassign {
     }
 }
 
+mod if_else {
+    use crate::parse;
+
+    #[test]
+    fn if_only() {
+        insta::assert_debug_snapshot!(parse("if x { print(x) }"));
+    }
+    #[test]
+    fn if_with_else() {
+        insta::assert_debug_snapshot!(parse(r#"if x { print("yes") } else { print("no") }"#));
+    }
+    #[test]
+    fn else_if_chain() {
+        insta::assert_debug_snapshot!(parse(
+            r#"if x { print(1) } else if y { print(2) } else { print(3) }"#
+        ));
+    }
+    #[test]
+    fn if_with_comparison_cond() {
+        insta::assert_debug_snapshot!(parse(r#"if x == 1 { print("one") }"#));
+    }
+    #[test]
+    fn if_with_logical_cond() {
+        insta::assert_debug_snapshot!(parse("if x and y { print(z) }"));
+    }
+    #[test]
+    fn nested_if() {
+        insta::assert_debug_snapshot!(parse("if x { if y { print(z) } }"));
+    }
+    #[test]
+    fn if_missing_braces() {
+        insta::assert_debug_snapshot!(parse("if x print(x)"));
+    }
+    #[test]
+    fn if_missing_condition() {
+        insta::assert_debug_snapshot!(parse("if { print(x) }"));
+    }
+    #[test]
+    fn else_without_braces() {
+        insta::assert_debug_snapshot!(parse("if x { } else foo()"));
+    }
+}
+
 mod errors {
     use crate::parse;
 

@@ -1,0 +1,68 @@
+---
+source: tests/parser.rs
+expression: "parse(r#\"if x == 1 { print(\"one\") }\"#)"
+---
+Ok(
+    [
+        If {
+            cond: Binary {
+                op: Eq,
+                lhs: Identifier(
+                    "x",
+                    Span {
+                        start: 3,
+                        end: 4,
+                    },
+                ),
+                rhs: Int(
+                    1,
+                    Span {
+                        start: 8,
+                        end: 9,
+                    },
+                ),
+                span: Span {
+                    start: 3,
+                    end: 9,
+                },
+            },
+            then_block: Block {
+                stmts: [
+                    Expr(
+                        Call {
+                            callee: Identifier(
+                                "print",
+                                Span {
+                                    start: 12,
+                                    end: 17,
+                                },
+                            ),
+                            args: [
+                                String(
+                                    "one",
+                                    Span {
+                                        start: 18,
+                                        end: 23,
+                                    },
+                                ),
+                            ],
+                            span: Span {
+                                start: 12,
+                                end: 24,
+                            },
+                        },
+                    ),
+                ],
+                span: Span {
+                    start: 10,
+                    end: 26,
+                },
+            },
+            else_branch: None,
+            span: Span {
+                start: 0,
+                end: 26,
+            },
+        },
+    ],
+)

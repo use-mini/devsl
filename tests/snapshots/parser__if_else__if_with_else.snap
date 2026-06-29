@@ -1,0 +1,87 @@
+---
+source: tests/parser.rs
+expression: "parse(r#\"if x { print(\"yes\") } else { print(\"no\") }\"#)"
+---
+Ok(
+    [
+        If {
+            cond: Identifier(
+                "x",
+                Span {
+                    start: 3,
+                    end: 4,
+                },
+            ),
+            then_block: Block {
+                stmts: [
+                    Expr(
+                        Call {
+                            callee: Identifier(
+                                "print",
+                                Span {
+                                    start: 7,
+                                    end: 12,
+                                },
+                            ),
+                            args: [
+                                String(
+                                    "yes",
+                                    Span {
+                                        start: 13,
+                                        end: 18,
+                                    },
+                                ),
+                            ],
+                            span: Span {
+                                start: 7,
+                                end: 19,
+                            },
+                        },
+                    ),
+                ],
+                span: Span {
+                    start: 5,
+                    end: 21,
+                },
+            },
+            else_branch: Some(
+                Block {
+                    stmts: [
+                        Expr(
+                            Call {
+                                callee: Identifier(
+                                    "print",
+                                    Span {
+                                        start: 29,
+                                        end: 34,
+                                    },
+                                ),
+                                args: [
+                                    String(
+                                        "no",
+                                        Span {
+                                            start: 35,
+                                            end: 39,
+                                        },
+                                    ),
+                                ],
+                                span: Span {
+                                    start: 29,
+                                    end: 40,
+                                },
+                            },
+                        ),
+                    ],
+                    span: Span {
+                        start: 27,
+                        end: 42,
+                    },
+                },
+            ),
+            span: Span {
+                start: 0,
+                end: 42,
+            },
+        },
+    ],
+)

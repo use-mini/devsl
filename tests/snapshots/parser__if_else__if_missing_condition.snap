@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"if { print(x) }\")"
+---
+Err(
+    ParseError {
+        message: "expected condition after `if`, found `{`",
+        span: Span {
+            start: 3,
+            end: 4,
+        },
+    },
+)
