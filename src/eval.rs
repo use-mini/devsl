@@ -368,6 +368,28 @@ fn eval_expr(expr: &Expr, ctx: &mut EvalCtx) -> Result<Option<Value>, EvalError>
                 )),
             }
         }
+        Expr::Member { recv, field, span } => {
+            let v = require_value(eval_expr(recv, ctx)?, recv.span())?;
+
+            match v {
+                Value::Object(entries) => {
+                    if let Some(e) = entries.iter().find(|e| e.0 == *field) {
+                        Ok(Some(e.1.clone()))
+                    } else {
+                        Err(EvalError::new(
+                            ErrorCategory::Name,
+                            format!("object has no field `{field}`"),
+                            *span,
+                        ))
+                    }
+                }
+                _ => Err(EvalError::new(
+                    ErrorCategory::Type,
+                    format!("cannot access field `{field}` on {}", type_name(&v)),
+                    *span,
+                )),
+            }
+        }
         _ => todo!(),
     }
 }
@@ -787,6 +809,17 @@ fn is_keyword(string: &str) -> bool {
     )
 }
 
+fn type_name(v: &Value) -> &'static str {
+    match v {
+        Value::String(_) => "String",
+        Value::Int(_) => "Int",
+        Value::Float(_) => "Float",
+        Value::Bool(_) => "Bool",
+        Value::List(_) => "List",
+        Value::Object(_) => "Object",
+        Value::Null => "Null",
+    }
+}
 fn io_err(e: std::io::Error, span: Span) -> EvalError {
     EvalError::with_cause(
         ErrorCategory::Runtime,
