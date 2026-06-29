@@ -1,0 +1,24 @@
+---
+source: tests/parser.rs
+expression: "parse(\"u.@first-name\")"
+---
+Ok(
+    [
+        Expr(
+            Member {
+                recv: Identifier(
+                    "u",
+                    Span {
+                        start: 0,
+                        end: 1,
+                    },
+                ),
+                field: "first-name",
+                span: Span {
+                    start: 0,
+                    end: 13,
+                },
+            },
+        ),
+    ],
+)

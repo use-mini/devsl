@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"a.\")"
+---
+Err(
+    ParseError {
+        message: "expected field name after `.`, found Eof",
+        span: Span {
+            start: 2,
+            end: 2,
+        },
+    },
+)

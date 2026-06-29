@@ -513,3 +513,32 @@ mod object_literal {
         insta::assert_debug_snapshot!(parse("var u = {a: 1"));
     }
 }
+
+mod member_access {
+    use crate::parse;
+
+    #[test]
+    fn plain() {
+        insta::assert_debug_snapshot!(parse("u.name"));
+    }
+    #[test]
+    fn extended_ident() {
+        insta::assert_debug_snapshot!(parse("u.@first-name"));
+    }
+    #[test]
+    fn chained() {
+        insta::assert_debug_snapshot!(parse("a.b.c"));
+    }
+    #[test]
+    fn member_on_call() {
+        insta::assert_debug_snapshot!(parse("foo(1).x"));
+    }
+    #[test]
+    fn member_on_list_literal() {
+        insta::assert_debug_snapshot!(parse("[1,2].first"));
+    }
+    #[test]
+    fn dot_without_field_is_error() {
+        insta::assert_debug_snapshot!(parse("a."));
+    }
+}

@@ -1,0 +1,39 @@
+---
+source: tests/parser.rs
+expression: "parse(\"foo(1).x\")"
+---
+Ok(
+    [
+        Expr(
+            Member {
+                recv: Call {
+                    callee: Identifier(
+                        "foo",
+                        Span {
+                            start: 0,
+                            end: 3,
+                        },
+                    ),
+                    args: [
+                        Int(
+                            1,
+                            Span {
+                                start: 4,
+                                end: 5,
+                            },
+                        ),
+                    ],
+                    span: Span {
+                        start: 0,
+                        end: 6,
+                    },
+                },
+                field: "x",
+                span: Span {
+                    start: 0,
+                    end: 8,
+                },
+            },
+        ),
+    ],
+)
