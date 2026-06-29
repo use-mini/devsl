@@ -390,7 +390,50 @@ fn eval_expr(expr: &Expr, ctx: &mut EvalCtx) -> Result<Option<Value>, EvalError>
                 )),
             }
         }
-        _ => todo!(),
+        Expr::Index { recv, key, span } => {
+            let r = require_value(eval_expr(recv, ctx)?, recv.span())?;
+            let k = require_value(eval_expr(key, ctx)?, key.span())?;
+            match (r, k) {
+                (Value::Object(entries), Value::String(field)) => {
+                    for (k, v) in entries {
+                        if k == field {
+                            return Ok(Some(v));
+                        }
+                    }
+                    Err(EvalError::new(
+                        ErrorCategory::Name,
+                        format!("object has no key `{field}`"),
+                        *span,
+                    ))
+                }
+                (Value::Object(_), other) => Err(EvalError::new(
+                    ErrorCategory::Type,
+                    format!("object key must be String, got {}", type_name(&other)),
+                    *span,
+                )),
+                (Value::List(entries), Value::Int(idx)) => {
+                    if idx >= 0 && (idx as usize) < entries.len() {
+                        Ok(Some(entries[idx as usize].clone()))
+                    } else {
+                        Err(EvalError::new(
+                            ErrorCategory::Runtime,
+                            format!("list index {idx} out of bounds (length {})", entries.len()),
+                            *span,
+                        ))
+                    }
+                }
+                (Value::List(_), other) => Err(EvalError::new(
+                    ErrorCategory::Type,
+                    format!("list index must be Int, got {}", type_name(&other)),
+                    *span,
+                )),
+                (other, _) => Err(EvalError::new(
+                    ErrorCategory::Type,
+                    format!("cannot index {}", type_name(&other)),
+                    *span,
+                )),
+            }
+        }
     }
 }
 
