@@ -9,7 +9,47 @@ enum Value {
     Int(i64),
     Float(f64),
     Bool(bool),
+    List(Vec<Value>),
+    Object(Vec<(String, Value)>),
     Null,
+}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::String(left), Self::String(right)) => left == right,
+            (Self::Int(left), Self::Int(right)) => left == right,
+            (Self::Float(left), Self::Float(right)) => left == right,
+            (Self::Int(left), Self::Float(right)) => (*left as f64) == *right,
+            (Self::Float(left), Self::Int(right)) => *left == (*right as f64),
+            (Self::Bool(left), Self::Bool(right)) => left == right,
+            (Self::Null, Self::Null) => true,
+            (Self::List(left), Self::List(right)) => {
+                if left.len() != right.len() {
+                    return false;
+                }
+                for (idx, item) in left.iter().enumerate() {
+                    if right[idx] != *item {
+                        return false;
+                    }
+                }
+                true
+            }
+            (Self::Object(left), Self::Object(right)) => {
+                if left.len() != right.len() {
+                    return false;
+                }
+
+                for item in left.iter() {
+                    if !right.iter().any(|i| i == item) {
+                        return false;
+                    }
+                }
+                true
+            }
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -297,6 +337,16 @@ fn eval_expr(expr: &Expr, ctx: &mut EvalCtx) -> Result<Option<Value>, EvalError>
             })
         }
         Expr::Bool(b, _) => Ok(Some(Value::Bool(*b))),
+        Expr::List { items, .. } => {
+            let mut values = Vec::with_capacity(items.len());
+
+            for item in items {
+                values.push(require_value(eval_expr(item, ctx)?, item.span())?);
+            }
+
+            Ok(Some(Value::List(values)))
+        }
+
         Expr::Null(_) => Ok(Some(Value::Null)),
         Expr::Not { inner, span } => {
             let v = require_value(eval_expr(inner, ctx)?, inner.span())?;
@@ -354,6 +404,9 @@ fn eval_binary(op: BinOp, lhs: Value, rhs: Value, span: Span) -> Result<Value, E
     use BinOp::*;
     use Value::*;
     match (op, lhs, rhs) {
+        (Eq, l, r) => Ok(Bool(l == r)),
+        (NotEq, l, r) => Ok(Bool(l != r)),
+
         (Add, Int(a), Int(b)) => a
             .checked_add(b)
             .map(Int)
@@ -377,23 +430,13 @@ fn eval_binary(op: BinOp, lhs: Value, rhs: Value, span: Span) -> Result<Value, E
                 Ok(Float(a as f64 / b as f64))
             }
         }
+
         (Add, Float(a), Float(b)) => Ok(Float(a + b)),
         (Sub, Float(a), Float(b)) => Ok(Float(a - b)),
         (Mul, Float(a), Float(b)) => Ok(Float(a * b)),
         (Div, Float(a), Float(b)) => Ok(Float(a / b)),
 
         (Add, String(a), String(b)) => Ok(String(a + &b)),
-
-        (Eq, Int(a), Int(b)) => Ok(Bool(a == b)),
-        (Eq, Float(a), Float(b)) => Ok(Bool(a == b)),
-        (Eq, String(a), String(b)) => Ok(Bool(a == b)),
-        (Eq, Bool(a), Bool(b)) => Ok(Bool(a == b)),
-        (Eq, Null, Null) => Ok(Bool(true)),
-
-        (NotEq, l, r) => match eval_binary(BinOp::Eq, l, r, span)? {
-            Bool(b) => Ok(Bool(!b)),
-            _ => unreachable!("Eq returns Bool"),
-        },
 
         (Lt, Int(a), Int(b)) => Ok(Bool(a < b)),
         (Lt, Float(a), Float(b)) => Ok(Bool(a < b)),
@@ -413,8 +456,6 @@ fn eval_binary(op: BinOp, lhs: Value, rhs: Value, span: Span) -> Result<Value, E
 
         (op, Int(a), Float(b)) => eval_binary(op, Float(a as f64), Float(b), span),
         (op, Float(a), Int(b)) => eval_binary(op, Float(a), Float(b as f64), span),
-
-        (Eq, _, _) => Ok(Bool(false)),
 
         (op, l, r) => Err(EvalError::new(
             ErrorCategory::Type,
@@ -657,13 +698,86 @@ fn builtin_number(call: BuiltinCall) -> Result<Option<Value>, EvalError> {
 }
 
 fn write_value(w: &mut dyn std::io::Write, v: &Value) -> std::io::Result<()> {
+    write_value_ctx(w, v, false)
+}
+
+fn write_value_ctx(
+    w: &mut dyn std::io::Write,
+    v: &Value,
+    in_compound: bool,
+) -> std::io::Result<()> {
     match v {
         Value::Int(int) => write!(w, "{int}"),
         Value::Float(float) => write!(w, "{float:?}"),
-        Value::String(string) => w.write_all(string.as_bytes()),
+        Value::String(string) => {
+            if in_compound {
+                let s = string.replace('\\', "\\\\").replace('"', "\\\"");
+                write!(w, "\"{s}\"")
+            } else {
+                w.write_all(string.as_bytes())
+            }
+        }
         Value::Bool(bool) => write!(w, "{bool}"),
+        Value::List(items) => {
+            write!(w, "[")?;
+            for (idx, item) in items.iter().enumerate() {
+                if idx > 0 {
+                    write!(w, ", ")?;
+                }
+                write_value_ctx(w, item, true)?;
+            }
+            write!(w, "]")
+        }
+        Value::Object(object) => {
+            write!(w, "{{")?;
+            for (idx, key) in object.iter().enumerate() {
+                if idx > 0 {
+                    write!(w, ", ")?;
+                }
+                write_object_key(w, &key.0)?;
+                write!(w, ": ")?;
+                write_value_ctx(w, &key.1, true)?;
+            }
+            write!(w, "}}")
+        }
         Value::Null => w.write_all(b"null"),
     }
+}
+
+fn write_object_key(w: &mut dyn std::io::Write, key: &str) -> std::io::Result<()> {
+    let first = key.chars().next();
+    let is_bare = !is_keyword(key)
+        && first
+            .map(|c| c.is_ascii_alphabetic() || c == '_')
+            .unwrap_or(false)
+        && key
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
+    if is_bare {
+        write!(w, "{key}")
+    } else {
+        let s = key.replace('\\', "\\\\").replace('"', "\\\"");
+        write!(w, "\"{s}\"")
+    }
+}
+
+fn is_keyword(string: &str) -> bool {
+    matches!(
+        string,
+        "or" | "and"
+            | "not"
+            | "var"
+            | "const"
+            | "if"
+            | "else"
+            | "true"
+            | "false"
+            | "return"
+            | "for"
+            | "in"
+            | "null"
+            | "fn"
+    )
 }
 
 fn io_err(e: std::io::Error, span: Span) -> EvalError {
