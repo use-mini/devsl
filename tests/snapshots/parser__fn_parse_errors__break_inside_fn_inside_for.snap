@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"for x in [1] { fn f() { break } }\")"
+---
+Err(
+    ParseError {
+        message: "`break` used outside a loop",
+        span: Span {
+            start: 24,
+            end: 29,
+        },
+    },
+)

@@ -1,0 +1,39 @@
+---
+source: tests/parser.rs
+expression: "parse(\"f(1,\\n2)\")"
+---
+Ok(
+    [
+        Expr(
+            Call {
+                callee: Identifier(
+                    "f",
+                    Span {
+                        start: 0,
+                        end: 1,
+                    },
+                ),
+                args: [
+                    Int(
+                        1,
+                        Span {
+                            start: 2,
+                            end: 3,
+                        },
+                    ),
+                    Int(
+                        2,
+                        Span {
+                            start: 5,
+                            end: 6,
+                        },
+                    ),
+                ],
+                span: Span {
+                    start: 0,
+                    end: 7,
+                },
+            },
+        ),
+    ],
+)

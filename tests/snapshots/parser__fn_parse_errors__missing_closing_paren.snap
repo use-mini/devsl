@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"fn f(x { x }\")"
+---
+Err(
+    ParseError {
+        message: "expected `,` or `)`, found OCurly",
+        span: Span {
+            start: 7,
+            end: 8,
+        },
+    },
+)

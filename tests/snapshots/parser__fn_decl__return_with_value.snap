@@ -1,0 +1,33 @@
+---
+source: tests/parser.rs
+expression: "parse(\"fn f() { return 42 }\")"
+---
+Ok(
+    [
+        Fn {
+            name: "f",
+            params: [],
+            body: [
+                Return {
+                    value: Some(
+                        Int(
+                            42,
+                            Span {
+                                start: 16,
+                                end: 18,
+                            },
+                        ),
+                    ),
+                    span: Span {
+                        start: 9,
+                        end: 18,
+                    },
+                },
+            ],
+            span: Span {
+                start: 0,
+                end: 20,
+            },
+        },
+    ],
+)

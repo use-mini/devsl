@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"fn f(x) x\")"
+---
+Err(
+    ParseError {
+        message: "expected `{`, got Identifier(\"x\")",
+        span: Span {
+            start: 8,
+            end: 9,
+        },
+    },
+)

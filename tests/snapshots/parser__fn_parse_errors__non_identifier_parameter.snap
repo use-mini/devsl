@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"fn f(1) { }\")"
+---
+Err(
+    ParseError {
+        message: "expected parameter, found Int(1)",
+        span: Span {
+            start: 5,
+            end: 6,
+        },
+    },
+)

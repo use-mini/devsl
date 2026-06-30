@@ -1,0 +1,29 @@
+---
+source: tests/parser.rs
+expression: "parse(\"fn id(x) { x }\")"
+---
+Ok(
+    [
+        Fn {
+            name: "id",
+            params: [
+                "x",
+            ],
+            body: [
+                Expr(
+                    Identifier(
+                        "x",
+                        Span {
+                            start: 11,
+                            end: 12,
+                        },
+                    ),
+                ),
+            ],
+            span: Span {
+                start: 0,
+                end: 14,
+            },
+        },
+    ],
+)

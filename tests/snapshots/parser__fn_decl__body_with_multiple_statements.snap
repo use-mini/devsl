@@ -1,0 +1,63 @@
+---
+source: tests/parser.rs
+expression: "parse(\"fn f(x) { var y = x + 1\\nreturn y }\")"
+---
+Ok(
+    [
+        Fn {
+            name: "f",
+            params: [
+                "x",
+            ],
+            body: [
+                Var {
+                    name: "y",
+                    value: Binary {
+                        op: Add,
+                        lhs: Identifier(
+                            "x",
+                            Span {
+                                start: 18,
+                                end: 19,
+                            },
+                        ),
+                        rhs: Int(
+                            1,
+                            Span {
+                                start: 22,
+                                end: 23,
+                            },
+                        ),
+                        span: Span {
+                            start: 18,
+                            end: 23,
+                        },
+                    },
+                    span: Span {
+                        start: 10,
+                        end: 23,
+                    },
+                },
+                Return {
+                    value: Some(
+                        Identifier(
+                            "y",
+                            Span {
+                                start: 31,
+                                end: 32,
+                            },
+                        ),
+                    ),
+                    span: Span {
+                        start: 24,
+                        end: 32,
+                    },
+                },
+            ],
+            span: Span {
+                start: 0,
+                end: 34,
+            },
+        },
+    ],
+)

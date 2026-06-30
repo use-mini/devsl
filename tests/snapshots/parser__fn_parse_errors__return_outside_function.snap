@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"return 1\")"
+---
+Err(
+    ParseError {
+        message: "`return` used outside a function",
+        span: Span {
+            start: 0,
+            end: 6,
+        },
+    },
+)

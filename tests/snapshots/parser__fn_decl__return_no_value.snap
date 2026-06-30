@@ -1,0 +1,25 @@
+---
+source: tests/parser.rs
+expression: "parse(\"fn f() { return }\")"
+---
+Ok(
+    [
+        Fn {
+            name: "f",
+            params: [],
+            body: [
+                Return {
+                    value: None,
+                    span: Span {
+                        start: 9,
+                        end: 15,
+                    },
+                },
+            ],
+            span: Span {
+                start: 0,
+                end: 17,
+            },
+        },
+    ],
+)

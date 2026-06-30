@@ -633,3 +633,130 @@ mod for_loop_errors {
         insta::assert_debug_snapshot!(parse("if true { break }"));
     }
 }
+
+mod fn_decl {
+    use crate::parse;
+
+    #[test]
+    fn zero_params_empty_body() {
+        insta::assert_debug_snapshot!(parse("fn f() { }"));
+    }
+    #[test]
+    fn one_param_single_expr_body() {
+        insta::assert_debug_snapshot!(parse("fn id(x) { x }"));
+    }
+    #[test]
+    fn multiple_params() {
+        insta::assert_debug_snapshot!(parse("fn add(a, b, c) { a + b + c }"));
+    }
+    #[test]
+    fn trailing_comma_in_params() {
+        insta::assert_debug_snapshot!(parse("fn id(x,) { x }"));
+    }
+    #[test]
+    fn body_with_multiple_statements() {
+        insta::assert_debug_snapshot!(parse("fn f(x) { var y = x + 1\nreturn y }"));
+    }
+    #[test]
+    fn return_no_value() {
+        insta::assert_debug_snapshot!(parse("fn f() { return }"));
+    }
+    #[test]
+    fn return_with_value() {
+        insta::assert_debug_snapshot!(parse("fn f() { return 42 }"));
+    }
+    #[test]
+    fn empty_params_with_newline() {
+        insta::assert_debug_snapshot!(parse("fn f(\n) { }"));
+    }
+    #[test]
+    fn newline_after_open_paren() {
+        insta::assert_debug_snapshot!(parse("fn f(\n  a, b) { }"));
+    }
+    #[test]
+    fn newline_after_comma() {
+        insta::assert_debug_snapshot!(parse("fn f(a,\n  b) { }"));
+    }
+    #[test]
+    fn newline_before_close_paren_with_trailing_comma() {
+        insta::assert_debug_snapshot!(parse("fn f(a,\n) { }"));
+    }
+    #[test]
+    fn multiline_params() {
+        insta::assert_debug_snapshot!(parse("fn f(\n  a,\n  b,\n) { }"));
+    }
+}
+
+mod fn_parse_errors {
+    use crate::parse;
+
+    #[test]
+    fn duplicate_parameter() {
+        insta::assert_debug_snapshot!(parse("fn f(x, x) { x }"));
+    }
+    #[test]
+    fn non_identifier_parameter() {
+        insta::assert_debug_snapshot!(parse("fn f(1) { }"));
+    }
+    #[test]
+    fn missing_closing_paren() {
+        insta::assert_debug_snapshot!(parse("fn f(x { x }"));
+    }
+    #[test]
+    fn missing_body_brace() {
+        insta::assert_debug_snapshot!(parse("fn f(x) x"));
+    }
+    #[test]
+    fn return_outside_function() {
+        insta::assert_debug_snapshot!(parse("return 1"));
+    }
+    #[test]
+    fn break_inside_fn_inside_for() {
+        // fn body resets loop-depth; the `break` is illegal even though
+        // a `for` syntactically surrounds the fn.
+        insta::assert_debug_snapshot!(parse("for x in [1] { fn f() { break } }"));
+    }
+    #[test]
+    fn newline_between_param_and_comma() {
+        // Matches list/object literal behavior: newlines between an item and
+        // its delimiter are rejected.
+        insta::assert_debug_snapshot!(parse("fn f(a\n, b) { }"));
+    }
+}
+
+mod fn_call_lift {
+    use crate::parse;
+
+    #[test]
+    fn call_on_paren_anon_fn() {
+        insta::assert_debug_snapshot!(parse("(fn(x) { x })(1)"));
+    }
+    #[test]
+    fn call_after_member() {
+        insta::assert_debug_snapshot!(parse("o.f(1)"));
+    }
+    #[test]
+    fn chained_call() {
+        insta::assert_debug_snapshot!(parse("f()(1)"));
+    }
+    #[test]
+    fn call_on_index() {
+        insta::assert_debug_snapshot!(parse("xs[0](1)"));
+    }
+    #[test]
+    fn newline_after_open_paren() {
+        insta::assert_debug_snapshot!(parse("f(\n1, 2)"));
+    }
+    #[test]
+    fn newline_after_comma() {
+        insta::assert_debug_snapshot!(parse("f(1,\n2)"));
+    }
+    #[test]
+    fn trailing_comma() {
+        insta::assert_debug_snapshot!(parse("f(1,)"));
+    }
+    #[test]
+    fn multiline_args_with_trailing_comma() {
+        insta::assert_debug_snapshot!(parse("f(\n  1,\n  2,\n)"));
+    }
+}

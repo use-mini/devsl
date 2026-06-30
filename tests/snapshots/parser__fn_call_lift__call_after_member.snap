@@ -1,0 +1,39 @@
+---
+source: tests/parser.rs
+expression: "parse(\"o.f(1)\")"
+---
+Ok(
+    [
+        Expr(
+            Call {
+                callee: Member {
+                    recv: Identifier(
+                        "o",
+                        Span {
+                            start: 0,
+                            end: 1,
+                        },
+                    ),
+                    field: "f",
+                    span: Span {
+                        start: 0,
+                        end: 3,
+                    },
+                },
+                args: [
+                    Int(
+                        1,
+                        Span {
+                            start: 4,
+                            end: 5,
+                        },
+                    ),
+                ],
+                span: Span {
+                    start: 0,
+                    end: 6,
+                },
+            },
+        ),
+    ],
+)

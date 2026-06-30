@@ -1,0 +1,59 @@
+---
+source: tests/parser.rs
+expression: "parse(\"fn add(a, b, c) { a + b + c }\")"
+---
+Ok(
+    [
+        Fn {
+            name: "add",
+            params: [
+                "a",
+                "b",
+                "c",
+            ],
+            body: [
+                Expr(
+                    Binary {
+                        op: Add,
+                        lhs: Binary {
+                            op: Add,
+                            lhs: Identifier(
+                                "a",
+                                Span {
+                                    start: 18,
+                                    end: 19,
+                                },
+                            ),
+                            rhs: Identifier(
+                                "b",
+                                Span {
+                                    start: 22,
+                                    end: 23,
+                                },
+                            ),
+                            span: Span {
+                                start: 18,
+                                end: 23,
+                            },
+                        },
+                        rhs: Identifier(
+                            "c",
+                            Span {
+                                start: 26,
+                                end: 27,
+                            },
+                        ),
+                        span: Span {
+                            start: 18,
+                            end: 27,
+                        },
+                    },
+                ),
+            ],
+            span: Span {
+                start: 0,
+                end: 29,
+            },
+        },
+    ],
+)

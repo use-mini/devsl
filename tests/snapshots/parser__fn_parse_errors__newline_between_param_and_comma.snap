@@ -1,0 +1,13 @@
+---
+source: tests/parser.rs
+expression: "parse(\"fn f(a\\n, b) { }\")"
+---
+Err(
+    ParseError {
+        message: "expected `,` or `)`, found Newline",
+        span: Span {
+            start: 6,
+            end: 7,
+        },
+    },
+)

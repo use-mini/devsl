@@ -1,0 +1,45 @@
+---
+source: tests/parser.rs
+expression: "parse(\"(fn(x) { x })(1)\")"
+---
+Ok(
+    [
+        Expr(
+            Call {
+                callee: Fn {
+                    params: [
+                        "x",
+                    ],
+                    body: [
+                        Expr(
+                            Identifier(
+                                "x",
+                                Span {
+                                    start: 9,
+                                    end: 10,
+                                },
+                            ),
+                        ),
+                    ],
+                    span: Span {
+                        start: 0,
+                        end: 13,
+                    },
+                },
+                args: [
+                    Int(
+                        1,
+                        Span {
+                            start: 14,
+                            end: 15,
+                        },
+                    ),
+                ],
+                span: Span {
+                    start: 0,
+                    end: 16,
+                },
+            },
+        ),
+    ],
+)
