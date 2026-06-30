@@ -592,3 +592,28 @@ mod for_loop {
         insta::assert_debug_snapshot!(run("for x in [1, 2] { undefined_thing }"));
     }
 }
+
+mod redeclaration {
+    use crate::run;
+
+    #[test]
+    fn var_then_var_same_scope() {
+        insta::assert_debug_snapshot!(run("var x = 1\nvar x = 2"));
+    }
+    #[test]
+    fn const_then_const_same_scope() {
+        insta::assert_debug_snapshot!(run("const x = 1\nconst x = 2"));
+    }
+    #[test]
+    fn const_then_var_same_scope() {
+        insta::assert_debug_snapshot!(run("const x = 1\nvar x = 2"));
+    }
+    #[test]
+    fn var_then_const_same_scope() {
+        insta::assert_debug_snapshot!(run("var x = 1\nconst x = 2"));
+    }
+    #[test]
+    fn nested_scope_shadow_still_ok() {
+        insta::assert_debug_snapshot!(run("var x = 1\n{ var x = 2\n print(x) }\nprint(x)"));
+    }
+}

@@ -1,0 +1,15 @@
+---
+source: tests/eval.rs
+expression: "run(\"const x = 1\\nconst x = 2\")"
+---
+Err(
+    EvalError {
+        category: Name,
+        message: "`x` is already defined in this scope",
+        span: Span {
+            start: 12,
+            end: 23,
+        },
+        cause: None,
+    },
+)
