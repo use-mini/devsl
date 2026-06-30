@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"for x in [1, 2, 3] { if x == 2 { break } }\\nprint(\\\"done\\\")\")"
+---
+Ok(
+    "done\n",
+)

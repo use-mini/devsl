@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"var x = 1\\nfor x in [2, 3] { }\\nprint(x)\")"
+---
+Ok(
+    "1\n",
+)

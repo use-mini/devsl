@@ -533,3 +533,62 @@ mod chained_access {
             "#));
     }
 }
+
+mod for_loop {
+    use crate::run;
+
+    #[test]
+    fn prints_each_int() {
+        insta::assert_debug_snapshot!(run("for x in [1, 2, 3] { print(x) }"));
+    }
+    #[test]
+    fn empty_list_no_output() {
+        insta::assert_debug_snapshot!(run("for x in [] { print(x) }"));
+    }
+    #[test]
+    fn break_exits_early() {
+        insta::assert_debug_snapshot!(run("for x in [1, 2, 3] { if x == 2 { break }\nprint(x) }"));
+    }
+    #[test]
+    fn continue_skips_one() {
+        insta::assert_debug_snapshot!(run(
+            "for x in [1, 2, 3] { if x == 2 { continue }\nprint(x) }"
+        ));
+    }
+    #[test]
+    fn break_through_nested_if() {
+        insta::assert_debug_snapshot!(run(
+            "for x in [1, 2, 3] { if x == 2 { break } }\nprint(\"done\")"
+        ));
+    }
+    #[test]
+    fn nested_for_break_inner_only() {
+        insta::assert_debug_snapshot!(run(
+            "for x in [1, 2] { for y in [10, 20] { if y == 10 { break }\nprint(y) }\nprint(x) }"
+        ));
+    }
+    #[test]
+    fn loop_var_const_in_body() {
+        insta::assert_debug_snapshot!(run("for x in [1] { x = 99 }"));
+    }
+    #[test]
+    fn loop_var_not_visible_after() {
+        insta::assert_debug_snapshot!(run("for x in [1] { }\nprint(x)"));
+    }
+    #[test]
+    fn outer_var_restored_after_loop() {
+        insta::assert_debug_snapshot!(run("var x = 1\nfor x in [2, 3] { }\nprint(x)"));
+    }
+    #[test]
+    fn non_list_iter_int() {
+        insta::assert_debug_snapshot!(run("for x in 1 { }"));
+    }
+    #[test]
+    fn non_list_iter_object() {
+        insta::assert_debug_snapshot!(run("for x in {a: 1} { }"));
+    }
+    #[test]
+    fn body_error_propagates() {
+        insta::assert_debug_snapshot!(run("for x in [1, 2] { undefined_thing }"));
+    }
+}

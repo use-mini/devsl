@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"for x in [] { print(x) }\")"
+---
+Ok(
+    "",
+)

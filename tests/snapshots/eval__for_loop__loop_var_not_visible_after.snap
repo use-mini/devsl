@@ -1,0 +1,15 @@
+---
+source: tests/eval.rs
+expression: "run(\"for x in [1] { }\\nprint(x)\")"
+---
+Err(
+    EvalError {
+        category: Name,
+        message: "unknown identifier `x`",
+        span: Span {
+            start: 23,
+            end: 24,
+        },
+        cause: None,
+    },
+)
