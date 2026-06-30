@@ -234,7 +234,46 @@ fn eval_stmt(stmt: &Stmt, ctx: &mut EvalCtx) -> Result<ControlFlow, EvalError> {
                 )),
             }
         }
-        _ => todo!(),
+        Stmt::For {
+            var,
+            iter,
+            body,
+            span,
+        } => {
+            let it = require_value(eval_expr(iter, ctx)?, iter.span())?;
+
+            match it {
+                Value::List(items) => {
+                    for item in items {
+                        ctx.env.push_scope();
+                        ctx.env.define(var.clone(), item, true);
+                        let body_result = (|| {
+                            for b in body {
+                                let cf = eval_stmt(b, ctx)?;
+                                if cf != ControlFlow::Normal {
+                                    return Ok(cf);
+                                }
+                            }
+                            Ok(ControlFlow::Normal)
+                        })();
+                        ctx.env.pop_scope();
+                        if body_result? == ControlFlow::Break {
+                            break;
+                        }
+                    }
+                    Ok(ControlFlow::Normal)
+                }
+                _ => {
+                    return Err(EvalError::new(
+                        ErrorCategory::Type,
+                        format!("cannot iterate {}", type_name(&it)),
+                        *span,
+                    ));
+                }
+            }
+        }
+        Stmt::Continue(_) => Ok(ControlFlow::Continue),
+        Stmt::Break(_) => Ok(ControlFlow::Break),
     }
 }
 
