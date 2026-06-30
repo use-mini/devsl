@@ -72,6 +72,11 @@ enum ReassignError {
 }
 
 #[derive(Debug)]
+struct AlreadyDefined {
+    name: String,
+}
+
+#[derive(Debug)]
 pub struct Env {
     scopes: Vec<HashMap<String, Binding>>,
 }
@@ -96,6 +101,21 @@ impl Env {
     fn define(&mut self, name: String, value: Value, is_const: bool) {
         let top = self.scopes.last_mut().expect("env always has root scope");
         top.insert(name, Binding { value, is_const });
+    }
+
+    fn declare(
+        &mut self,
+        name: String,
+        value: Value,
+        is_const: bool,
+    ) -> Result<(), AlreadyDefined> {
+        let top = self.scopes.last_mut().expect("env always has root scope");
+        if top.contains_key(&name) {
+            Err(AlreadyDefined { name })
+        } else {
+            top.insert(name, Binding { value, is_const });
+            Ok(())
+        }
     }
 
     fn reassign(&mut self, name: &str, value: Value) -> Result<(), ReassignError> {
@@ -158,8 +178,13 @@ fn bind(
         }
     };
 
-    ctx.env.define(name.to_string(), v, is_const);
-    Ok(())
+    ctx.env.declare(name.to_string(), v, is_const).map_err(|e| {
+        EvalError::new(
+            ErrorCategory::Name,
+            format!("`{}` is already defined in this scope", e.name),
+            span,
+        )
+    })
 }
 
 pub fn eval(stmts: &[Stmt], ctx: &mut EvalCtx) -> Result<(), EvalError> {
