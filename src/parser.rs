@@ -71,6 +71,11 @@ pub enum Expr {
         args: Vec<Expr>,
         span: Span,
     },
+    Fn {
+        params: Vec<String>,
+        body: Vec<Stmt>,
+        span: Span,
+    },
 }
 
 impl Expr {
@@ -89,6 +94,7 @@ impl Expr {
             Expr::Not { span, .. } => *span,
             Expr::Binary { span, .. } => *span,
             Expr::Call { span, .. } => *span,
+            Expr::Fn { span, .. } => *span,
         }
     }
     pub fn with_span(self, span: Span) -> Expr {
@@ -106,6 +112,7 @@ impl Expr {
             Expr::Not { inner, .. } => Expr::Not { inner, span },
             Expr::Binary { op, lhs, rhs, .. } => Expr::Binary { op, lhs, rhs, span },
             Expr::Call { callee, args, .. } => Expr::Call { callee, args, span },
+            Expr::Fn { params, body, .. } => Expr::Fn { params, body, span },
         }
     }
 }
@@ -146,6 +153,16 @@ pub enum Stmt {
     },
     Continue(Span),
     Break(Span),
+    Fn {
+        name: String,
+        params: Vec<String>,
+        body: Vec<Stmt>,
+        span: Span,
+    },
+    Return {
+        value: Option<Expr>,
+        span: Span,
+    },
 }
 
 impl Stmt {
@@ -160,6 +177,8 @@ impl Stmt {
             Stmt::For { span, .. } => *span,
             Stmt::Continue(span) => *span,
             Stmt::Break(span) => *span,
+            Stmt::Fn { span, .. } => *span,
+            Stmt::Return { span, .. } => *span,
         }
     }
 }
@@ -168,6 +187,7 @@ pub struct Parser {
     tokens: Vec<Token>,
     pos: usize,
     loop_depth: u32,
+    fn_depth: u32,
 }
 
 impl Parser {
@@ -176,6 +196,7 @@ impl Parser {
             tokens,
             pos: 0,
             loop_depth: 0,
+            fn_depth: 0,
         }
     }
 
@@ -246,6 +267,8 @@ impl Parser {
             TokenKind::For => self.parse_for(),
             TokenKind::Continue => self.parse_continue(),
             TokenKind::Break => self.parse_break(),
+            TokenKind::Fn => self.parse_fn_stmt(),
+            TokenKind::Return => self.parse_return(),
             TokenKind::Identifier(_) if matches!(self.peek_next().kind, TokenKind::Eq) => {
                 self.parse_reassign()
             }
@@ -624,6 +647,10 @@ impl Parser {
             return self.parse_object_literal();
         }
 
+        if matches!(self.peek().kind, TokenKind::Fn) {
+            return self.parse_fn_expr();
+        }
+
         let token = self.peek().clone();
         self.advance();
         match token.kind {
@@ -633,52 +660,7 @@ impl Parser {
             TokenKind::Bool(b) => Ok(Expr::Bool(b, token.span)),
             TokenKind::Null => Ok(Expr::Null(token.span)),
             TokenKind::Identifier(ref identifier) => {
-                if matches!(&self.peek().kind, TokenKind::OParen) {
-                    self.advance();
-                    let mut args = Vec::new();
-                    let mut cparen_span = self.peek().span;
-                    if !matches!(&self.peek().kind, TokenKind::CParen) {
-                        loop {
-                            if matches!(self.peek().kind, TokenKind::Comma | TokenKind::CParen) {
-                                return Err(ParseError::new(
-                                    format!("expected argument, found {:?}", self.peek().kind),
-                                    self.peek().span,
-                                ));
-                            }
-                            args.push(self.parse_expr()?);
-                            let peek = self.peek();
-                            match &peek.kind {
-                                TokenKind::Comma => {
-                                    self.advance();
-                                }
-                                TokenKind::CParen => {
-                                    cparen_span = peek.span;
-                                    break;
-                                }
-                                _ => {
-                                    return Err(ParseError::new(
-                                        format!(
-                                            "expected `,` or `)`, found {:?}",
-                                            self.peek().kind
-                                        ),
-                                        self.peek().span,
-                                    ));
-                                }
-                            }
-                        }
-                    }
-                    self.advance();
-                    Ok(Expr::Call {
-                        callee: Box::new(Expr::Identifier(identifier.to_string(), token.span)),
-                        args,
-                        span: Span {
-                            start: token.span.start,
-                            end: cparen_span.end,
-                        },
-                    })
-                } else {
-                    Ok(Expr::Identifier(identifier.to_string(), token.span))
-                }
+                Ok(Expr::Identifier(identifier.to_string(), token.span))
             }
             _ => Err(ParseError::new(
                 format!("expected expression, found {:?}", token.kind),
@@ -911,6 +893,61 @@ impl Parser {
                         span,
                     };
                 }
+                TokenKind::OParen => {
+                    self.advance();
+                    while matches!(self.peek().kind, TokenKind::Newline) {
+                        self.advance();
+                    }
+                    let mut args = Vec::new();
+                    let mut cparen_span = self.peek().span;
+                    if !matches!(&self.peek().kind, TokenKind::CParen) {
+                        loop {
+                            if matches!(self.peek().kind, TokenKind::Comma | TokenKind::CParen) {
+                                return Err(ParseError::new(
+                                    format!("expected argument, found {:?}", self.peek().kind),
+                                    self.peek().span,
+                                ));
+                            }
+                            args.push(self.parse_expr()?);
+                            let peek = self.peek();
+                            match &peek.kind {
+                                TokenKind::Comma => {
+                                    self.advance();
+                                    while matches!(self.peek().kind, TokenKind::Newline) {
+                                        self.advance();
+                                    }
+                                    if matches!(self.peek().kind, TokenKind::CParen) {
+                                        cparen_span = self.peek().span;
+                                        break;
+                                    }
+                                }
+                                TokenKind::CParen => {
+                                    cparen_span = peek.span;
+                                    break;
+                                }
+                                _ => {
+                                    return Err(ParseError::new(
+                                        format!(
+                                            "expected `,` or `)`, found {:?}",
+                                            self.peek().kind
+                                        ),
+                                        self.peek().span,
+                                    ));
+                                }
+                            }
+                        }
+                    }
+                    self.advance();
+                    let lhs_span = lhs.span();
+                    lhs = Expr::Call {
+                        callee: Box::new(lhs),
+                        args,
+                        span: Span {
+                            start: lhs_span.start,
+                            end: cparen_span.end,
+                        },
+                    };
+                }
                 _ => break,
             }
         }
@@ -1001,6 +1038,161 @@ impl Parser {
         } else {
             self.advance();
             Ok(Stmt::Break(break_span))
+        }
+    }
+
+    fn parse_fn_stmt(&mut self) -> Result<Stmt, ParseError> {
+        let fn_span = self.peek().span;
+        self.advance();
+
+        let identifier = match self.peek().kind {
+            TokenKind::Identifier(ref identifier) => identifier.clone(),
+            _ => {
+                return Err(ParseError::new(
+                    format!(
+                        "expected function name after `fn`, got {:?}",
+                        self.peek().kind
+                    ),
+                    self.peek().span,
+                ));
+            }
+        };
+        self.advance();
+        let tail = self.parse_fn_tail()?;
+
+        Ok(Stmt::Fn {
+            name: identifier,
+            params: tail.0,
+            body: tail.1,
+            span: Span {
+                start: fn_span.start,
+                end: tail.2.end,
+            },
+        })
+    }
+
+    fn parse_fn_expr(&mut self) -> Result<Expr, ParseError> {
+        let fn_span = self.peek().span;
+        self.advance();
+        let tail = self.parse_fn_tail()?;
+
+        Ok(Expr::Fn {
+            params: tail.0,
+            body: tail.1,
+            span: Span {
+                start: fn_span.start,
+                end: tail.2.end,
+            },
+        })
+    }
+
+    fn parse_fn_tail(&mut self) -> Result<(Vec<String>, Vec<Stmt>, Span), ParseError> {
+        if !matches!(self.peek().kind, TokenKind::OParen) {
+            return Err(ParseError::new(
+                format!("expected `(`, got {:?}", self.peek().kind),
+                self.peek().span,
+            ));
+        }
+        self.advance();
+        while matches!(self.peek().kind, TokenKind::Newline) {
+            self.advance();
+        }
+        let mut params = Vec::new();
+        if !matches!(&self.peek().kind, TokenKind::CParen) {
+            loop {
+                let identifier = match &self.peek().kind {
+                    TokenKind::Identifier(identifier) => identifier.clone(),
+                    _ => {
+                        return Err(ParseError::new(
+                            format!("expected parameter, found {:?}", self.peek().kind),
+                            self.peek().span,
+                        ));
+                    }
+                };
+                if params.contains(&identifier) {
+                    return Err(ParseError::new(
+                        format!("duplicate parameter `{identifier}`"),
+                        self.peek().span,
+                    ));
+                } else {
+                    params.push(identifier);
+                }
+                self.advance();
+
+                let peek = self.peek();
+                match &peek.kind {
+                    TokenKind::Comma => {
+                        self.advance();
+                        while matches!(self.peek().kind, TokenKind::Newline) {
+                            self.advance();
+                        }
+                        if matches!(self.peek().kind, TokenKind::CParen) {
+                            break;
+                        }
+                    }
+                    TokenKind::CParen => {
+                        break;
+                    }
+                    _ => {
+                        return Err(ParseError::new(
+                            format!("expected `,` or `)`, found {:?}", self.peek().kind),
+                            self.peek().span,
+                        ));
+                    }
+                }
+            }
+        }
+        self.advance();
+        if !matches!(self.peek().kind, TokenKind::OCurly) {
+            return Err(ParseError::new(
+                format!("expected `{{`, got {:?}", self.peek().kind),
+                self.peek().span,
+            ));
+        }
+        let loop_depth = self.loop_depth;
+        self.loop_depth = 0;
+        self.fn_depth += 1;
+        let block_result = self.parse_block();
+        self.loop_depth = loop_depth;
+        self.fn_depth -= 1;
+        let block = block_result?;
+
+        let block_span = block.span();
+        let stmts = match block {
+            Stmt::Block { stmts, .. } => stmts,
+            _ => unreachable!("parse_block always returns Stmt::Block"),
+        };
+
+        Ok((params, stmts, block_span))
+    }
+
+    fn parse_return(&mut self) -> Result<Stmt, ParseError> {
+        let return_span = self.peek().span;
+        if self.fn_depth == 0 {
+            return Err(ParseError::new(
+                format!("`return` used outside a function"),
+                return_span,
+            ));
+        }
+        self.advance();
+        if matches!(
+            self.peek().kind,
+            TokenKind::Newline | TokenKind::CCurly | TokenKind::Eof
+        ) {
+            Ok(Stmt::Return {
+                value: None,
+                span: return_span,
+            })
+        } else {
+            let expr = self.parse_expr()?;
+            let expr_span = expr.span();
+            Ok(Stmt::Return {
+                value: Some(expr),
+                span: Span {
+                    start: return_span.start,
+                    end: expr_span.end,
+                },
+            })
         }
     }
 }

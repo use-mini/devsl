@@ -299,6 +299,7 @@ fn eval_stmt(stmt: &Stmt, ctx: &mut EvalCtx) -> Result<ControlFlow, EvalError> {
         }
         Stmt::Continue(_) => Ok(ControlFlow::Continue),
         Stmt::Break(_) => Ok(ControlFlow::Break),
+        _ => todo!(),
     }
 }
 
@@ -515,6 +516,7 @@ fn eval_expr(expr: &Expr, ctx: &mut EvalCtx) -> Result<Option<Value>, EvalError>
                 )),
             }
         }
+        _ => todo!(),
     }
 }
 
