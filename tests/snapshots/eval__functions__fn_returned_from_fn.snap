@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"fn make_adder(n) { fn(x) { x + n } }\\nconst inc = make_adder(1)\\nprint(inc(41))\")"
+---
+Ok(
+    "42\n",
+)

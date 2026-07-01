@@ -683,11 +683,6 @@ mod functions {
     fn captured_name_is_const_inside_body() {
         insta::assert_debug_snapshot!(run("var m = 1\nconst f = fn() { m = 2 }\nf()"));
     }
-    // NOTE: parser routes `fn` in statement position to parse_fn_stmt,
-    // which requires an identifier. An anonymous `fn(...)` as an
-    // expression-statement fails to parse until dispatch peeks at the
-    // token after `fn` to choose between Stmt::Fn and Stmt::Expr(Expr::Fn).
-    #[ignore]
     #[test]
     fn nested_closure_captures_outer_param() {
         insta::assert_debug_snapshot!(run(
@@ -708,10 +703,6 @@ mod functions {
             "fn apply(f, x) { f(x) }\nfn dbl(n) { n * 2 }\nprint(apply(dbl, 5))"
         ));
     }
-    // NOTE: same parser gap as nested_closure_captures_outer_param:
-    // anonymous `fn(...)` in statement position routes to parse_fn_stmt
-    // and fails on the missing identifier.
-    #[ignore]
     #[test]
     fn fn_returned_from_fn() {
         insta::assert_debug_snapshot!(run(

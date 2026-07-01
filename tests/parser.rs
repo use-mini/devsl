@@ -685,6 +685,10 @@ mod fn_decl {
     fn multiline_params() {
         insta::assert_debug_snapshot!(parse("fn f(\n  a,\n  b,\n) { }"));
     }
+    #[test]
+    fn anonymous_fn_as_statement() {
+        insta::assert_debug_snapshot!(parse("fn(x) { x }"));
+    }
 }
 
 mod fn_parse_errors {

@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"fn outer(x) { fn(y) { x + y } }\\nconst add5 = outer(5)\\nprint(add5(3))\")"
+---
+Ok(
+    "8\n",
+)
