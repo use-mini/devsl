@@ -267,7 +267,9 @@ impl Parser {
             TokenKind::For => self.parse_for(),
             TokenKind::Continue => self.parse_continue(),
             TokenKind::Break => self.parse_break(),
-            TokenKind::Fn => self.parse_fn_stmt(),
+            TokenKind::Fn if matches!(self.peek_next().kind, TokenKind::Identifier(_)) => {
+                self.parse_fn_stmt()
+            }
             TokenKind::Return => self.parse_return(),
             TokenKind::Identifier(_) if matches!(self.peek_next().kind, TokenKind::Eq) => {
                 self.parse_reassign()
