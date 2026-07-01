@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"fn f() { return 7 }\\nprint(f())\")"
+---
+Ok(
+    "7\n",
+)

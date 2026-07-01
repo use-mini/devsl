@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"print((fn(x) { x * 2 })(21))\")"
+---
+Ok(
+    "42\n",
+)

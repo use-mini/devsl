@@ -1,0 +1,15 @@
+---
+source: tests/eval.rs
+expression: "run(\"print((fn(x) { x })())\")"
+---
+Err(
+    EvalError {
+        category: Type,
+        message: "`function` takes 1 argument, got 0",
+        span: Span {
+            start: 6,
+            end: 19,
+        },
+        cause: None,
+    },
+)

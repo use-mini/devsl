@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"fn greet(n) { \\\"hi, \\\" + n }\\nprint(greet(\\\"Ana\\\"))\")"
+---
+Ok(
+    "hi, Ana\n",
+)

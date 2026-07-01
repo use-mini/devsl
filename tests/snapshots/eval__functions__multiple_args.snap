@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"fn add(a, b, c) { a + b + c }\\nprint(add(1, 2, 3))\")"
+---
+Ok(
+    "6\n",
+)

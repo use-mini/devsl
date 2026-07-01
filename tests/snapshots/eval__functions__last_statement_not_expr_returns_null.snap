@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"fn f() { var x = 1 }\\nprint(f())\")"
+---
+Ok(
+    "null\n",
+)

@@ -1,0 +1,15 @@
+---
+source: tests/eval.rs
+expression: "run(\"fn f(x, y) { x + y }\\nprint(f(1))\")"
+---
+Err(
+    EvalError {
+        category: Type,
+        message: "`f` takes 2 arguments, got 1",
+        span: Span {
+            start: 27,
+            end: 28,
+        },
+        cause: None,
+    },
+)

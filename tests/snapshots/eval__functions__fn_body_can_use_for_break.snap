@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"fn count_to(n) { for i in [1, 2, 3, 4, 5] { if i > n { break }\\nprint(i) } }\\ncount_to(3)\")"
+---
+Ok(
+    "1\n2\n3\n",
+)

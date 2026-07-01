@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"fn count(n) { if n == 0 { return }\\nprint(n)\\ncount(n - 1) }\\ncount(3)\")"
+---
+Ok(
+    "3\n2\n1\n",
+)

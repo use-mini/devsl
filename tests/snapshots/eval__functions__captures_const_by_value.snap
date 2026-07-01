@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"const m = 3\\nfn triple(x) { x * m }\\nprint(triple(7))\")"
+---
+Ok(
+    "21\n",
+)

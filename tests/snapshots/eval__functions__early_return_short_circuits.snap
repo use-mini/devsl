@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"fn classify(c) { if c >= 500 { return \\\"server\\\" }\\nif c >= 400 { return \\\"client\\\" }\\n\\\"ok\\\" }\\nprint(classify(404))\")"
+---
+Ok(
+    "client\n",
+)

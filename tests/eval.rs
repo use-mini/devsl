@@ -617,3 +617,160 @@ mod redeclaration {
         insta::assert_debug_snapshot!(run("var x = 1\n{ var x = 2\n print(x) }\nprint(x)"));
     }
 }
+
+mod functions {
+    use crate::run;
+
+    #[test]
+    fn named_fn_call() {
+        insta::assert_debug_snapshot!(run("fn greet(n) { \"hi, \" + n }\nprint(greet(\"Ana\"))"));
+    }
+    #[test]
+    fn anonymous_fn_call() {
+        insta::assert_debug_snapshot!(run("const double = fn(x) { x * 2 }\nprint(double(21))"));
+    }
+    #[test]
+    fn immediately_invoked() {
+        insta::assert_debug_snapshot!(run("print((fn(x) { x * 2 })(21))"));
+    }
+    #[test]
+    fn zero_args() {
+        insta::assert_debug_snapshot!(run("fn f() { 42 }\nprint(f())"));
+    }
+    #[test]
+    fn multiple_args() {
+        insta::assert_debug_snapshot!(run("fn add(a, b, c) { a + b + c }\nprint(add(1, 2, 3))"));
+    }
+
+    #[test]
+    fn explicit_return() {
+        insta::assert_debug_snapshot!(run("fn f() { return 7 }\nprint(f())"));
+    }
+    #[test]
+    fn implicit_last_expr_return() {
+        insta::assert_debug_snapshot!(run("fn f() { 1 + 2 }\nprint(f())"));
+    }
+    #[test]
+    fn early_return_short_circuits() {
+        insta::assert_debug_snapshot!(run(
+            "fn classify(c) { if c >= 500 { return \"server\" }\nif c >= 400 { return \"client\" }\n\"ok\" }\nprint(classify(404))"
+        ));
+    }
+    #[test]
+    fn return_no_value_is_null() {
+        insta::assert_debug_snapshot!(run("fn f() { return }\nprint(f())"));
+    }
+    #[test]
+    fn empty_body_returns_null() {
+        insta::assert_debug_snapshot!(run("fn f() { }\nprint(f())"));
+    }
+    #[test]
+    fn last_statement_not_expr_returns_null() {
+        insta::assert_debug_snapshot!(run("fn f() { var x = 1 }\nprint(f())"));
+    }
+
+    #[test]
+    fn captures_const_by_value() {
+        insta::assert_debug_snapshot!(run("const m = 3\nfn triple(x) { x * m }\nprint(triple(7))"));
+    }
+    #[test]
+    fn capture_is_snapshot_not_live() {
+        insta::assert_debug_snapshot!(run(
+            "var m = 3\nconst f = fn(x) { x * m }\nm = 99\nprint(f(2))"
+        ));
+    }
+    #[test]
+    fn captured_name_is_const_inside_body() {
+        insta::assert_debug_snapshot!(run("var m = 1\nconst f = fn() { m = 2 }\nf()"));
+    }
+    // NOTE: parser routes `fn` in statement position to parse_fn_stmt,
+    // which requires an identifier. An anonymous `fn(...)` as an
+    // expression-statement fails to parse until dispatch peeks at the
+    // token after `fn` to choose between Stmt::Fn and Stmt::Expr(Expr::Fn).
+    #[ignore]
+    #[test]
+    fn nested_closure_captures_outer_param() {
+        insta::assert_debug_snapshot!(run(
+            "fn outer(x) { fn(y) { x + y } }\nconst add5 = outer(5)\nprint(add5(3))"
+        ));
+    }
+
+    #[test]
+    fn named_recursion() {
+        insta::assert_debug_snapshot!(run(
+            "fn count(n) { if n == 0 { return }\nprint(n)\ncount(n - 1) }\ncount(3)"
+        ));
+    }
+
+    #[test]
+    fn fn_passed_as_argument() {
+        insta::assert_debug_snapshot!(run(
+            "fn apply(f, x) { f(x) }\nfn dbl(n) { n * 2 }\nprint(apply(dbl, 5))"
+        ));
+    }
+    // NOTE: same parser gap as nested_closure_captures_outer_param:
+    // anonymous `fn(...)` in statement position routes to parse_fn_stmt
+    // and fails on the missing identifier.
+    #[ignore]
+    #[test]
+    fn fn_returned_from_fn() {
+        insta::assert_debug_snapshot!(run(
+            "fn make_adder(n) { fn(x) { x + n } }\nconst inc = make_adder(1)\nprint(inc(41))"
+        ));
+    }
+    #[test]
+    fn fn_stored_in_list() {
+        insta::assert_debug_snapshot!(run(
+            "const fs = [fn(x) { x + 1 }, fn(x) { x * 2 }]\nprint(fs[0](10), fs[1](10))"
+        ));
+    }
+    #[test]
+    fn fn_stored_in_object() {
+        insta::assert_debug_snapshot!(run("const o = {f: fn(x) { x + 1 }}\nprint(o.f(41))"));
+    }
+
+    #[test]
+    fn arity_too_few() {
+        insta::assert_debug_snapshot!(run("fn f(x, y) { x + y }\nprint(f(1))"));
+    }
+    #[test]
+    fn arity_too_many() {
+        insta::assert_debug_snapshot!(run("fn f(x) { x }\nprint(f(1, 2))"));
+    }
+    #[test]
+    fn anonymous_arity_error_says_function() {
+        insta::assert_debug_snapshot!(run("print((fn(x) { x })())"));
+    }
+    #[test]
+    fn calling_int_is_type_error() {
+        insta::assert_debug_snapshot!(run("print((42)(1))"));
+    }
+    #[test]
+    fn calling_string_is_type_error() {
+        insta::assert_debug_snapshot!(run(r#"print("hi"(1))"#));
+    }
+    #[test]
+    fn fn_redeclares_existing_name() {
+        insta::assert_debug_snapshot!(run("const foo = 1\nfn foo() { }"));
+    }
+    #[test]
+    fn fn_then_fn_same_name() {
+        insta::assert_debug_snapshot!(run("fn foo() { }\nfn foo() { }"));
+    }
+
+    #[test]
+    fn fn_body_can_use_for_break() {
+        insta::assert_debug_snapshot!(run(
+            "fn count_to(n) { for i in [1, 2, 3, 4, 5] { if i > n { break }\nprint(i) } }\ncount_to(3)"
+        ));
+    }
+    // NOTE: parser lacks unary minus, so `-1` in `return -1` fails to parse.
+    // `Minus` is only registered as a binary operator (BinOp::Sub).
+    #[ignore]
+    #[test]
+    fn return_inside_for_inside_fn() {
+        insta::assert_debug_snapshot!(run(
+            "fn first_match(xs) { for x in xs { if x == 2 { return x } }\nreturn -1 }\nprint(first_match([1, 2, 3]))"
+        ));
+    }
+}

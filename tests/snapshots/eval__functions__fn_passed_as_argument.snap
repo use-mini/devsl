@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"fn apply(f, x) { f(x) }\\nfn dbl(n) { n * 2 }\\nprint(apply(dbl, 5))\")"
+---
+Ok(
+    "10\n",
+)

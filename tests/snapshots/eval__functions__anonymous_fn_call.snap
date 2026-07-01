@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"const double = fn(x) { x * 2 }\\nprint(double(21))\")"
+---
+Ok(
+    "42\n",
+)

@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"const o = {f: fn(x) { x + 1 }}\\nprint(o.f(41))\")"
+---
+Ok(
+    "42\n",
+)

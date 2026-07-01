@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"var m = 3\\nconst f = fn(x) { x * m }\\nm = 99\\nprint(f(2))\")"
+---
+Ok(
+    "6\n",
+)

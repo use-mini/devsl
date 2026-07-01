@@ -1,0 +1,7 @@
+---
+source: tests/eval.rs
+expression: "run(\"const fs = [fn(x) { x + 1 }, fn(x) { x * 2 }]\\nprint(fs[0](10), fs[1](10))\")"
+---
+Ok(
+    "11 20\n",
+)

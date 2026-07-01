@@ -1,0 +1,15 @@
+---
+source: tests/eval.rs
+expression: "run(\"print((42)(1))\")"
+---
+Err(
+    EvalError {
+        category: Type,
+        message: "cannot call value of type Int",
+        span: Span {
+            start: 6,
+            end: 13,
+        },
+        cause: None,
+    },
+)

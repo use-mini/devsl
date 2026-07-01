@@ -1,0 +1,15 @@
+---
+source: tests/eval.rs
+expression: "run(\"var m = 1\\nconst f = fn() { m = 2 }\\nf()\")"
+---
+Err(
+    EvalError {
+        category: Name,
+        message: "cannot reassign const `m`",
+        span: Span {
+            start: 27,
+            end: 32,
+        },
+        cause: None,
+    },
+)
