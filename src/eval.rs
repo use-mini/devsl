@@ -1,4 +1,8 @@
-use std::{collections::HashMap, error::Error};
+use std::{
+    collections::{HashMap, HashSet},
+    error::Error,
+    rc::Rc,
+};
 
 use crate::lexer::Span;
 use crate::parser::{BinOp, Expr, Stmt};
@@ -8,6 +12,23 @@ enum ControlFlow {
     Normal,
     Continue,
     Break,
+    Return(Value),
+}
+
+struct FunctionData {
+    name: Option<String>,
+    params: Vec<String>,
+    body: Vec<Stmt>,
+    captures: HashMap<String, Value>,
+}
+
+impl std::fmt::Debug for FunctionData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.name {
+            Some(n) => write!(f, "Function {{ name: {n:?} }}"),
+            None => write!(f, "Function {{ anonymous }}"),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -19,6 +40,7 @@ enum Value {
     List(Vec<Value>),
     Object(Vec<(String, Value)>),
     Null,
+    Function(Rc<FunctionData>),
 }
 
 impl PartialEq for Value {
@@ -54,6 +76,7 @@ impl PartialEq for Value {
                 }
                 true
             }
+            (Self::Function(_), Self::Function(_)) => false,
             _ => false,
         }
     }
@@ -96,6 +119,10 @@ impl Env {
         if self.scopes.len() != 1 {
             self.scopes.pop();
         }
+    }
+
+    fn swap_scopes(&mut self, new: Vec<HashMap<String, Binding>>) -> Vec<HashMap<String, Binding>> {
+        std::mem::replace(&mut self.scopes, new)
     }
 
     fn define(&mut self, name: String, value: Value, is_const: bool) {
@@ -153,13 +180,7 @@ pub struct EvalCtx<'w> {
     pub out: &'w mut dyn std::io::Write,
 }
 
-fn bind(
-    ctx: &mut EvalCtx,
-    name: &str,
-    value: &Expr,
-    span: Span,
-    is_const: bool,
-) -> Result<(), EvalError> {
+fn reject_builtin_shadow(name: &str, span: Span) -> Result<(), EvalError> {
     if builtin_is_name(name) {
         return Err(EvalError::new(
             ErrorCategory::Name,
@@ -167,6 +188,17 @@ fn bind(
             span,
         ));
     }
+    Ok(())
+}
+
+fn bind(
+    ctx: &mut EvalCtx,
+    name: &str,
+    value: &Expr,
+    span: Span,
+    is_const: bool,
+) -> Result<(), EvalError> {
+    reject_builtin_shadow(name, span)?;
     let v = match eval_expr(value, ctx)? {
         Some(v) => v,
         None => {
@@ -214,7 +246,7 @@ fn eval_stmt(stmt: &Stmt, ctx: &mut EvalCtx) -> Result<ControlFlow, EvalError> {
             let result = (|| {
                 for stmt in stmts {
                     let cf = eval_stmt(stmt, ctx)?;
-                    if cf != ControlFlow::Normal {
+                    if !matches!(cf, ControlFlow::Normal) {
                         return Ok(cf);
                     }
                 }
@@ -275,15 +307,19 @@ fn eval_stmt(stmt: &Stmt, ctx: &mut EvalCtx) -> Result<ControlFlow, EvalError> {
                         let body_result = (|| {
                             for b in body {
                                 let cf = eval_stmt(b, ctx)?;
-                                if cf != ControlFlow::Normal {
+                                if !matches!(cf, ControlFlow::Normal) {
                                     return Ok(cf);
                                 }
                             }
                             Ok(ControlFlow::Normal)
                         })();
                         ctx.env.pop_scope();
-                        if body_result? == ControlFlow::Break {
-                            break;
+
+                        let result = body_result?;
+                        match result {
+                            ControlFlow::Break => break,
+                            ControlFlow::Normal | ControlFlow::Continue => continue,
+                            ControlFlow::Return(_) => return Ok(result),
                         }
                     }
                     Ok(ControlFlow::Normal)
@@ -299,8 +335,175 @@ fn eval_stmt(stmt: &Stmt, ctx: &mut EvalCtx) -> Result<ControlFlow, EvalError> {
         }
         Stmt::Continue(_) => Ok(ControlFlow::Continue),
         Stmt::Break(_) => Ok(ControlFlow::Break),
-        _ => todo!(),
+        Stmt::Fn {
+            name,
+            params,
+            body,
+            span,
+        } => {
+            reject_builtin_shadow(name, *span)?;
+            let captures = compute_captures(body, params, &ctx.env);
+            let function = Value::Function(Rc::new(FunctionData {
+                name: Some(name.to_string()),
+                params: params.to_vec(),
+                body: body.to_vec(),
+                captures,
+            }));
+            ctx.env.declare(name.clone(), function, true).map_err(|e| {
+                EvalError::new(
+                    ErrorCategory::Name,
+                    format!("`{}` is already defined in this scope", e.name),
+                    *span,
+                )
+            })?;
+            Ok(ControlFlow::Normal)
+        }
+        Stmt::Return { value, .. } => {
+            let v = if let Some(expr) = value {
+                require_value(eval_expr(expr, ctx)?, expr.span())?
+            } else {
+                Value::Null
+            };
+            Ok(ControlFlow::Return(v))
+        }
     }
+}
+
+fn compute_captures(body: &[Stmt], params: &[String], env: &Env) -> HashMap<String, Value> {
+    let mut captures = HashMap::<String, Value>::new();
+    let mut bound = HashSet::<String>::new();
+    let mut free = HashSet::<String>::new();
+    for p in params {
+        bound.insert(p.clone());
+    }
+    for stmt in body {
+        collect_free_stmt(stmt, &mut bound, &mut free);
+    }
+
+    for f in free {
+        if let Some(v) = env.lookup(&f) {
+            captures.insert(f, v.clone());
+        }
+    }
+
+    captures
+}
+
+fn collect_free_stmt(stmt: &Stmt, bound: &mut HashSet<String>, free: &mut HashSet<String>) {
+    match stmt {
+        Stmt::Expr(expr) => collect_free_expr(expr, bound, free),
+        Stmt::Var { name, value, .. } | Stmt::Const { name, value, .. } => {
+            collect_free_expr(value, bound, free);
+            bound.insert(name.clone());
+        }
+        Stmt::Reassign { name, value, .. } => {
+            collect_free_expr(value, bound, free);
+            if !bound.contains(name) {
+                free.insert(name.clone());
+            }
+        }
+        Stmt::Block { stmts, .. } => {
+            let mut bound_snapshot = bound.clone();
+            for stmt in stmts {
+                collect_free_stmt(stmt, &mut bound_snapshot, free);
+            }
+        }
+        Stmt::If {
+            cond,
+            then_block,
+            else_branch,
+            ..
+        } => {
+            collect_free_expr(cond, bound, free);
+            collect_free_stmt(then_block, bound, free);
+            if let Some(stmt) = else_branch {
+                collect_free_stmt(stmt, bound, free);
+            }
+        }
+        Stmt::For {
+            var, iter, body, ..
+        } => {
+            collect_free_expr(iter, bound, free);
+            let mut bound_snapshot = bound.clone();
+            bound_snapshot.insert(var.clone());
+            for stmt in body {
+                collect_free_stmt(stmt, &mut bound_snapshot, free);
+            }
+        }
+        Stmt::Fn {
+            name, params, body, ..
+        } => {
+            let mut bound_snapshot = HashSet::<String>::new();
+            for p in params {
+                bound_snapshot.insert(p.clone());
+            }
+            bound_snapshot.insert(name.clone());
+            for b in body {
+                collect_free_stmt(b, &mut bound_snapshot, free);
+            }
+            bound.insert(name.clone());
+        }
+        Stmt::Return { value, .. } => {
+            if let Some(expr) = value {
+                collect_free_expr(expr, bound, free);
+            }
+        }
+        Stmt::Break(_) | Stmt::Continue(_) => {}
+    };
+}
+fn collect_free_expr(expr: &Expr, bound: &mut HashSet<String>, free: &mut HashSet<String>) {
+    match expr {
+        Expr::Identifier(identifier, _) => {
+            if !bound.contains(identifier) && !builtin_is_name(identifier) {
+                free.insert(identifier.clone());
+            }
+        }
+        Expr::List { items, .. } => {
+            for item in items {
+                collect_free_expr(item, bound, free);
+            }
+        }
+        Expr::Object { entries, .. } => {
+            for entry in entries {
+                collect_free_expr(&entry.1, bound, free);
+            }
+        }
+        Expr::Member { recv, .. } => {
+            collect_free_expr(recv, bound, free);
+        }
+        Expr::Index { key, recv, .. } => {
+            collect_free_expr(key, bound, free);
+            collect_free_expr(recv, bound, free);
+        }
+        Expr::Not { inner, .. } => {
+            collect_free_expr(inner, bound, free);
+        }
+        Expr::Binary { lhs, rhs, .. } => {
+            collect_free_expr(lhs, bound, free);
+            collect_free_expr(rhs, bound, free);
+        }
+        Expr::Call { callee, args, .. } => {
+            collect_free_expr(callee, bound, free);
+            for arg in args {
+                collect_free_expr(&arg, bound, free);
+            }
+        }
+        Expr::Fn { params, body, .. } => {
+            let mut bound_snapshot = HashSet::new();
+            for param in params {
+                bound_snapshot.insert(param.clone());
+            }
+
+            for b in body {
+                collect_free_stmt(b, &mut bound_snapshot, free);
+            }
+        }
+        Expr::String(_, _)
+        | Expr::Int(_, _)
+        | Expr::Float(_, _)
+        | Expr::Bool(_, _)
+        | Expr::Null(_) => {}
+    };
 }
 
 fn eval_expr(expr: &Expr, ctx: &mut EvalCtx) -> Result<Option<Value>, EvalError> {
@@ -382,41 +585,106 @@ fn eval_expr(expr: &Expr, ctx: &mut EvalCtx) -> Result<Option<Value>, EvalError>
             eval_binary(*op, l, r, *span).map(Some)
         }
         Expr::Call { callee, args, span } => {
-            let name = match callee.as_ref() {
-                Expr::Identifier(identifier, _) => identifier,
-                _ => {
-                    return Err(EvalError::new(
-                        ErrorCategory::Type,
-                        "callee must be an identifier".into(),
-                        callee.span(),
-                    ));
-                }
+            let name: Option<String> = match callee.as_ref() {
+                Expr::Identifier(identifier, _) => Some(identifier.clone()),
+                _ => None,
             };
-            if ctx.env.lookup(name).is_some() {
-                return Err(EvalError::new(
-                    ErrorCategory::Type,
-                    format!("`{name}` is a value, not callable"),
-                    callee.span(),
-                ));
-            }
-            let builtin = builtin_lookup(name).ok_or_else(|| {
-                EvalError::new(
-                    ErrorCategory::Name,
-                    format!("unknown identifier `{name}`"),
-                    callee.span(),
-                )
-            })?;
 
-            let mut arg_values = Vec::with_capacity(args.len());
-            for a in args {
-                let v = require_value(eval_expr(a, ctx)?, a.span())?;
-                arg_values.push(v);
+            if let Some(n) = name
+                && builtin_is_name(&n)
+            {
+                let builtin = builtin_lookup(&n).expect("builtin validation has already happened");
+                let mut arg_values = Vec::with_capacity(args.len());
+                for a in args {
+                    let v = require_value(eval_expr(a, ctx)?, a.span())?;
+                    arg_values.push(v);
+                }
+                (builtin.func)(BuiltinCall {
+                    ctx,
+                    args: &arg_values,
+                    span: *span,
+                })
+            } else {
+                let it = require_value(eval_expr(callee, ctx)?, callee.span())?;
+                match it {
+                    Value::Function(function) => {
+                        if args.len() != function.params.len() {
+                            let s = if function.params.len() == 1 { "" } else { "s" };
+                            return Err(EvalError::new(
+                                ErrorCategory::Type,
+                                format!(
+                                    "`{}` takes {} argument{s}, got {}",
+                                    function.name.as_deref().unwrap_or("function"),
+                                    function.params.len(),
+                                    args.len()
+                                ),
+                                callee.span(),
+                            ));
+                        }
+                        if function.body.len() == 0 {
+                            return Ok(Some(Value::Null));
+                        }
+
+                        let mut eval_args = Vec::new();
+                        for arg in args {
+                            let it = require_value(eval_expr(arg, ctx)?, arg.span())?;
+                            eval_args.push(it);
+                        }
+
+                        let mut new_scopes = Vec::<HashMap<String, Binding>>::new();
+                        new_scopes.push(HashMap::new());
+                        let old_scopes = ctx.env.swap_scopes(new_scopes);
+
+                        for (k, v) in &function.captures {
+                            ctx.env.define(k.clone(), v.clone(), true);
+                        }
+                        if let Some(name) = &function.name {
+                            ctx.env.define(
+                                name.clone(),
+                                Value::Function(Rc::clone(&function)),
+                                true,
+                            );
+                        }
+
+                        for (p, a) in function.params.iter().zip(eval_args) {
+                            ctx.env.define(p.clone(), a, true);
+                        }
+
+                        if let Some((last, rest)) = function.body.split_last() {
+                            let rest_result = (|| {
+                                for r in rest {
+                                    let cf = eval_stmt(r, ctx)?;
+                                    match cf {
+                                        ControlFlow::Return(ret) => return Ok(ret),
+                                        _ => continue,
+                                    }
+                                }
+                                match last {
+                                    Stmt::Expr(expr) => {
+                                        let it = require_value(eval_expr(expr, ctx)?, expr.span())?;
+                                        return Ok(it);
+                                    }
+                                    _ => {
+                                        let cf = eval_stmt(last, ctx)?;
+                                        match cf {
+                                            ControlFlow::Return(ret) => return Ok(ret),
+                                            _ => return Ok(Value::Null),
+                                        }
+                                    }
+                                }
+                            })();
+                            ctx.env.swap_scopes(old_scopes);
+                            return Ok(Some(rest_result?));
+                        }
+                        unreachable!("function will always have at least one statement")
+                    }
+                    other => Err(EvalError::new(
+                        ErrorCategory::Type,
+                        format!("cannot call value of type {}", type_name(&other)),
+                        *span,
+                    )),
+                }
             }
-            (builtin.func)(BuiltinCall {
-                ctx,
-                args: &arg_values,
-                span: *span,
-            })
         }
         Expr::Bool(b, _) => Ok(Some(Value::Bool(*b))),
         Expr::List { items, .. } => {
@@ -516,7 +784,15 @@ fn eval_expr(expr: &Expr, ctx: &mut EvalCtx) -> Result<Option<Value>, EvalError>
                 )),
             }
         }
-        _ => todo!(),
+        Expr::Fn { params, body, .. } => {
+            let captures = compute_captures(body, params, &ctx.env);
+            Ok(Some(Value::Function(Rc::new(FunctionData {
+                name: None,
+                params: params.to_vec(),
+                body: body.to_vec(),
+                captures,
+            }))))
+        }
     }
 }
 
@@ -549,6 +825,11 @@ fn check_names(expr: &Expr, ctx: &EvalCtx) -> Result<(), EvalError> {
         | Expr::String(_, _)
         | Expr::Bool(_, _)
         | Expr::Null(_) => Ok(()),
+        // NOTE: fn bodies scope their params; check_names has no bound-set
+        // to track them, so descending would misreport params as unknown.
+        // Skipped fns are never constructed, so unresolved names in the
+        // body are unreachable anyway.
+        Expr::Fn { .. } => Ok(()),
         _ => todo!(),
     }
 }
@@ -706,6 +987,15 @@ fn builtin_is_name(name: &str) -> bool {
 
 fn builtin_print(call: BuiltinCall) -> Result<Option<Value>, EvalError> {
     let mut first = true;
+
+    if call.args.iter().any(|a| matches!(a, Value::Function(_))) {
+        return Err(EvalError::new(
+            ErrorCategory::Type,
+            "cannot print value of type Function".to_string(),
+            call.span,
+        ));
+    }
+
     for v in call.args {
         if !first {
             call.ctx
@@ -728,6 +1018,14 @@ fn builtin_string(call: BuiltinCall) -> Result<Option<Value>, EvalError> {
         return Err(EvalError::new(
             ErrorCategory::Type,
             format!("`string` takes 1 argument, got {}", call.args.len()),
+            call.span,
+        ));
+    }
+
+    if matches!(call.args[0], Value::Function(_)) {
+        return Err(EvalError::new(
+            ErrorCategory::Type,
+            "cannot stringify value of type Function".to_string(),
             call.span,
         ));
     }
@@ -898,6 +1196,9 @@ fn write_value_ctx(
             write!(w, "}}")
         }
         Value::Null => w.write_all(b"null"),
+        Value::Function(_) => {
+            unreachable!("function values rejected in builtin before reaching write_value_ctx")
+        }
     }
 }
 
@@ -946,6 +1247,7 @@ fn type_name(v: &Value) -> &'static str {
         Value::List(_) => "List",
         Value::Object(_) => "Object",
         Value::Null => "Null",
+        Value::Function(_) => "Function",
     }
 }
 fn io_err(e: std::io::Error, span: Span) -> EvalError {

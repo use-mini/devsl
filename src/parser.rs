@@ -30,7 +30,7 @@ pub enum BinOp {
     And,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Expr {
     String(String, Span),
     Identifier(String, Span),
@@ -117,7 +117,7 @@ impl Expr {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Stmt {
     Expr(Expr),
     Var {
